@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsNumber, IsOptional, IsPositive, IsString, IsEnum, IsArray, IsUrl, Min, MinLength } from 'class-validator';
+import { IsBoolean, IsNumber, IsOptional, IsPositive, IsString, IsEnum, IsArray, IsUrl, Min, MinLength, ValidateNested, ArrayMinSize } from 'class-validator';
 import { Type } from 'class-transformer';
 import { PriceDto, LocationDto, PhotoDto, OperatorDto } from './nested-types.dto';
 
@@ -24,11 +24,13 @@ export class CreateAtraccionDto {
   @IsString()
   duration: string;
 
-  @ApiProperty({ description: 'Precio de la atracción', type: PriceDto })
+   @ApiProperty({ description: 'Precio de la atracción', type: PriceDto })
+  @ValidateNested()
   @Type(() => PriceDto)
   price: PriceDto;
 
-  @ApiProperty({ description: 'Empresa operadora del tour', type: OperatorDto })
+   @ApiProperty({ description: 'Empresa operadora del tour', type: OperatorDto })
+  @ValidateNested()
   @Type(() => OperatorDto)
   operator: OperatorDto;
 
@@ -52,13 +54,16 @@ export class CreateAtraccionDto {
   @IsString({ each: true })
   badges?: string[];
 
-  @ApiProperty({ description: 'Ubicaciones del tour', type: [LocationDto] })
+    @ApiProperty({ description: 'Ubicaciones del tour', type: [LocationDto] })
   @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
   @Type(() => LocationDto)
   locations: LocationDto[];
 
-  @ApiProperty({ description: 'Fotos de la atracción', type: [PhotoDto] })
+    @ApiProperty({ description: 'Fotos de la atracción', type: [PhotoDto] })
   @IsArray()
+  @ValidateNested({ each: true })
   @Type(() => PhotoDto)
   photos: PhotoDto[];
 

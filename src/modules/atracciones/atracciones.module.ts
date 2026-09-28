@@ -10,6 +10,7 @@ import { UbicacionAtraccion } from './entities/ubicacion-atraccion.entity';
 import { FotoAtraccion } from './entities/foto-atraccion.entity';
 import { Reserva } from './entities/reserva.entity';
 import { ClaveIdempotencia } from './entities/clave-idempotencia.entity';
+import { CiudadesSeed } from './seeds/ciudades.seed';
 
 @Module({
   imports: [
@@ -25,6 +26,6 @@ import { ClaveIdempotencia } from './entities/clave-idempotencia.entity';
     ]),
   ],
   controllers: [AtraccionesController],
-  providers: [AtraccionesService],
+  providers: [AtraccionesService, CiudadesSeed],
 })
 export class AtraccionesModule {}

@@ -1,14 +1,14 @@
 import {
   Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, Res,
-  ParseUUIDPipe, HttpCode, HttpStatus, Header, UseGuards,
+  ParseUUIDPipe, HttpCode, HttpStatus, Header, UseGuards, Headers,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiHeader, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { AtraccionesService } from './atracciones.service';
 import { CreateAtraccionDto } from './dto/create-atraccion.dto';
 import { UpdateAtraccionDto } from './dto/update-atraccion.dto';
 import { AtraccionResponseDto } from './dto/atraccion-response.dto';
-import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import { ListAtraccionesQueryDto } from './dto/list-atracciones-query.dto';
 import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 import { SearchAtraccionesDto } from './dto/search-atracciones.dto';
 import { SearchAtraccionesResponseDto } from './dto/search-response.dto';
@@ -53,7 +53,7 @@ export class AtraccionesController {
   @Get('reservations')
   @ApiOperation({ summary: 'Historial de reservas' })
   @ApiResponse({ status: 200, description: 'Listado de reservas.', type: [ReservationResponseDto] })
-  getReservations(): ReservationResponseDto[] {
+  getReservations(): Promise<ReservationResponseDto[]> {
     return this.atraccionesService.getReservations();
   }
 
@@ -62,24 +62,24 @@ export class AtraccionesController {
   @ApiParam({ name: 'reservationId', format: 'uuid' })
   @ApiResponse({ status: 200, description: 'Detalle de la reserva.', type: ReservationResponseDto })
   @ApiResponse({ status: 404, description: 'Reserva no encontrada.' })
-  getReservationById(@Param('reservationId', ParseUUIDPipe) reservationId: string): ReservationResponseDto {
+  getReservationById(@Param('reservationId', ParseUUIDPipe) reservationId: string): Promise<ReservationResponseDto> {
     return this.atraccionesService.getReservationById(reservationId);
   }
 
   @Post('reservations/:reservationId/cancel')
   @HttpCode(HttpStatus.OK)
   @UseGuards(IdempotencyKeyGuard)
-  @ApiOperation({ summary: 'Cancelar una reserva' })
+  @ApiOperation({ summary: 'Cancelar una reserva (requiere cabecera idempotency-key con un UUID)' })
   @ApiParam({ name: 'reservationId', format: 'uuid' })
-  @ApiHeader({ name: 'Idempotency-Key', required: true, description: 'UUID v4' })
   @ApiResponse({ status: 200, description: 'Cancelación procesada.', type: ReservationResponseDto })
   @ApiResponse({ status: 404, description: 'Reserva no encontrada.' })
   @ApiResponse({ status: 409, description: 'Conflicto o error de idempotencia.' })
   cancelReservation(
     @Param('reservationId', ParseUUIDPipe) reservationId: string,
     @Body() dto: CancelReservationRequestDto,
-  ): ReservationResponseDto {
-    return this.atraccionesService.cancelReservation(reservationId, dto, '');
+    @Headers('idempotency-key') idempotencyKey: string,
+  ): Promise<ReservationResponseDto> {
+    return this.atraccionesService.cancelReservation(reservationId, dto, idempotencyKey);
   }
 
   // ===================== COLECCIÓN =====================
@@ -89,7 +89,7 @@ export class AtraccionesController {
   @Header('Cache-Control', 'max-age=300')
   @ApiOperation({ summary: 'Obtener el listado paginado de atracciones' })
   @ApiResponse({ status: 200, description: 'Listado recuperado exitosamente.', type: PaginatedResponseDto })
-  findAll(@Query() query: PaginationQueryDto) {
+  findAll(@Query() query: ListAtraccionesQueryDto) {
     return this.atraccionesService.findAll(query);
   }
 
@@ -97,11 +97,11 @@ export class AtraccionesController {
   @ApiOperation({ summary: 'Registrar una nueva atracción' })
   @ApiResponse({ status: 201, description: 'Atracción creada. Devuelve cabecera Location.', type: AtraccionResponseDto })
   @ApiResponse({ status: 400, description: 'Datos de entrada inválidos.' })
-  create(
+  async create(
     @Body() createAtraccionDto: CreateAtraccionDto,
     @Res({ passthrough: true }) res: Response,
-  ): AtraccionResponseDto {
-    const atraccion = this.atraccionesService.create(createAtraccionDto);
+  ): Promise<AtraccionResponseDto> {
+    const atraccion = await this.atraccionesService.create(createAtraccionDto);
     res.setHeader('Location', `/api/v1/atracciones/${atraccion.id}`);
     return atraccion;
   }
@@ -115,7 +115,7 @@ export class AtraccionesController {
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiResponse({ status: 200, description: 'Detalle de la atracción.', type: AtraccionResponseDto })
   @ApiResponse({ status: 404, description: 'La atracción no existe.' })
-  findOne(@Param('id', ParseUUIDPipe) id: string): AtraccionResponseDto {
+  findOne(@Param('id', ParseUUIDPipe) id: string): Promise<AtraccionResponseDto> {
     return this.atraccionesService.findOne(id);
   }
 
@@ -126,8 +126,8 @@ export class AtraccionesController {
   @ApiResponse({ status: 204, description: 'Reemplazo exitoso sin contenido.' })
   @ApiResponse({ status: 400, description: 'Datos de entrada inválidos.' })
   @ApiResponse({ status: 404, description: 'La atracción no existe.' })
-  replace(@Param('id', ParseUUIDPipe) id: string, @Body() dto: CreateAtraccionDto): void {
-    this.atraccionesService.replace(id, dto);
+  replace(@Param('id', ParseUUIDPipe) id: string, @Body() dto: CreateAtraccionDto): Promise<void> {
+    return this.atraccionesService.replace(id, dto);
   }
 
   @Patch(':id')
@@ -136,7 +136,7 @@ export class AtraccionesController {
   @ApiResponse({ status: 200, description: 'Actualización exitosa.', type: AtraccionResponseDto })
   @ApiResponse({ status: 400, description: 'Datos de entrada inválidos.' })
   @ApiResponse({ status: 404, description: 'La atracción no existe.' })
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateAtraccionDto): AtraccionResponseDto {
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateAtraccionDto): Promise<AtraccionResponseDto> {
     return this.atraccionesService.update(id, dto);
   }
 
@@ -146,8 +146,8 @@ export class AtraccionesController {
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiResponse({ status: 204, description: 'Eliminación exitosa sin contenido.' })
   @ApiResponse({ status: 404, description: 'La atracción no existe.' })
-  delete(@Param('id', ParseUUIDPipe) id: string): void {
-    this.atraccionesService.delete(id);
+  delete(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
+    return this.atraccionesService.delete(id);
   }
 
   @Get(':id/availability')
@@ -156,16 +156,15 @@ export class AtraccionesController {
   @ApiQuery({ name: 'date', required: true, example: '2026-10-10' })
   @ApiResponse({ status: 200, description: 'Disponibilidad recuperada.', type: AvailabilityResponseDto })
   @ApiResponse({ status: 404, description: 'La atracción no existe.' })
-  getAvailability(@Param('id', ParseUUIDPipe) id: string, @Query('date') date: string): AvailabilityResponseDto {
+  getAvailability(@Param('id', ParseUUIDPipe) id: string, @Query('date') date: string): Promise<AvailabilityResponseDto> {
     return this.atraccionesService.getAvailability(id, date);
   }
 
   @Post(':id/reservations')
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(IdempotencyKeyGuard)
-  @ApiOperation({ summary: 'Crear una reserva de la atracción' })
+  @ApiOperation({ summary: 'Crear una reserva (requiere cabecera idempotency-key con un UUID)' })
   @ApiParam({ name: 'id', format: 'uuid' })
-  @ApiHeader({ name: 'Idempotency-Key', required: true, description: 'UUID v4' })
   @ApiResponse({ status: 201, description: 'Reserva confirmada.', type: ReservationResponseDto })
   @ApiResponse({ status: 400, description: 'Datos inválidos.' })
   @ApiResponse({ status: 404, description: 'La atracción no existe.' })
@@ -173,7 +172,8 @@ export class AtraccionesController {
   reserve(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() reservationDto: ReservationRequestDto,
-  ): ReservationResponseDto {
-    return this.atraccionesService.reserve(id, reservationDto, '');
+    @Headers('idempotency-key') idempotencyKey: string,
+  ): Promise<ReservationResponseDto> {
+    return this.atraccionesService.reserve(id, reservationDto, idempotencyKey);
   }
 }
