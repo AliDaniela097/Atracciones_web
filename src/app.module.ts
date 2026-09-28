@@ -3,7 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 import { CommonModule } from './common/common.module';
-import { AlojamientosModule } from './modules/alojamientos/alojamientos.module';
+//import { AlojamientosModule } from './modules/alojamientos/alojamientos.module';
 // import { AutosModule } from './modules/autos/autos.module';
 import { AtraccionesModule } from './modules/atracciones/atracciones.module';
 // import { VuelosModule } from './modules/vuelos/vuelos.module';
@@ -34,7 +34,7 @@ import { AtraccionesModule } from './modules/atracciones/atracciones.module';
     // =========================================================================
     // ATENCIÓN ALUMNO: Descomenta solo el módulo que corresponde a tu grupo
     // =========================================================================
-    AlojamientosModule,
+    //AlojamientosModule,
     // AutosModule,
     AtraccionesModule,
     // VuelosModule,
