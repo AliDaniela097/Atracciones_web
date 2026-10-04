@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 import { CommonModule } from './common/common.module';
 //import { AlojamientosModule } from './modules/alojamientos/alojamientos.module';
@@ -28,6 +30,12 @@ import { AtraccionesModule } from './modules/atracciones/atracciones.module';
       }),
     }),
 
+    // Seguridad: límite de peticiones por IP (100 por minuto). Si se supera responde 429.
+    ThrottlerModule.forRoot({
+      throttlers: [{ ttl: 60_000, limit: 100 }],
+      errorMessage: 'Demasiadas peticiones. Intente de nuevo en un minuto.',
+    }),
+
     // Módulos Compartidos
     CommonModule,
 
@@ -40,6 +48,7 @@ import { AtraccionesModule } from './modules/atracciones/atracciones.module';
     // VuelosModule,
   ],
   controllers: [],
-  providers: [],
+  // El límite de peticiones se aplica a todos los endpoints
+  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}

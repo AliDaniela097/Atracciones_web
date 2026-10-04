@@ -16,6 +16,10 @@ import { DetailsRequestDto } from './dto/details-request.dto';
 import { AvailabilityResponseDto } from './dto/availability.dto';
 import { ReservationRequestDto, ReservationResponseDto, CancelReservationRequestDto } from './dto/reservation.dto';
 import { IdempotencyKeyGuard } from '../../common/guards/idempotency-key.guard';
+import { Throttle } from '@nestjs/throttler';
+
+/** Reservar y cancelar: máximo 10 por minuto por IP (evita abuso y reservas masivas). */
+const LIMITE_TRANSACCIONAL = { default: { limit: 10, ttl: 60_000 } };
 
 @ApiTags('Atracciones')
 @Controller('atracciones')
@@ -73,6 +77,7 @@ export class AtraccionesController {
 
   @Post('reservations/:reservationId/cancel')
   @HttpCode(HttpStatus.OK)
+  @Throttle(LIMITE_TRANSACCIONAL)
   @UseGuards(IdempotencyKeyGuard)
   @ApiOperation({ summary: 'Cancelar una reserva (requiere cabecera idempotency-key con un UUID)' })
   @ApiParam({ name: 'reservationId', format: 'uuid' })
@@ -167,6 +172,7 @@ export class AtraccionesController {
 
   @Post(':id/reservations')
   @HttpCode(HttpStatus.CREATED)
+  @Throttle(LIMITE_TRANSACCIONAL)
   @UseGuards(IdempotencyKeyGuard)
   @ApiOperation({ summary: 'Crear una reserva (requiere cabecera idempotency-key con un UUID)' })
   @ApiParam({ name: 'id', format: 'uuid' })

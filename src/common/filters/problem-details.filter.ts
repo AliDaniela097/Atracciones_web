@@ -53,6 +53,7 @@ export class ProblemDetailsFilter implements ExceptionFilter {
       404: 'Recurso no encontrado',
       409: 'Conflicto',
       422: 'Entidad no procesable',
+      429: 'Demasiadas peticiones',
       500: 'Error interno del servidor',
     };
     return titulos[status] ?? 'Error';
