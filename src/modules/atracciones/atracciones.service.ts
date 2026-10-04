@@ -149,33 +149,44 @@ export class AtraccionesService {
 
     const offset = this.leerTokenPagina(dto.next_page);
     const rows = dto.rows > 0 ? Math.min(dto.rows, 100) : 20;
+    const orden = this.columnaOrden(dto.sort?.by);
 
-    const qb = this.atracciones
+    // Subconsulta: ids de atracciones que tienen alguna ubicación que cumple el filtro.
+    // Así una atracción con 2 ubicaciones no sale repetida.
+    const filtro = this.atracciones
       .createQueryBuilder('a')
-      .select('a.id', 'id')
-      .innerJoin('a.ubicaciones', 'u');
+      .where((qb) => {
+        const sub = qb.subQuery().select('u.atraccionId').from(UbicacionAtraccion, 'u');
+        if (dto.cities?.length) sub.andWhere('u.ciudadId IN (:...cities)');
+        if (dto.countries?.length) sub.andWhere('u.pais IN (:...countries)');
+        return 'a.id IN ' + sub.getQuery();
+      })
+      .setParameters({ cities: dto.cities ?? [], countries: (dto.countries ?? []).map((c) => c.toLowerCase()) });
 
-    if (dto.cities?.length) qb.andWhere('u.ciudadId IN (:...cities)', { cities: dto.cities });
-    if (dto.countries?.length) {
-      qb.andWhere('u.pais IN (:...countries)', { countries: dto.countries.map((c) => c.toLowerCase()) });
-    }
     const rating = dto.filters?.rating;
     if (rating?.minimum_review_score !== undefined) {
-      qb.andWhere('a.puntuacion >= :score', { score: rating.minimum_review_score });
+      filtro.andWhere('a.puntuacion >= :score', { score: rating.minimum_review_score });
     }
     if (rating?.minimum_review_count !== undefined) {
-      qb.andWhere('a.numeroResenas >= :count', { count: rating.minimum_review_count });
+      filtro.andWhere('a.numeroResenas >= :count', { count: rating.minimum_review_count });
     }
 
-    // Ids únicos (una atracción con 2 ubicaciones en la misma ciudad no debe salir 2 veces)
-    const todos = await qb.distinct(true).getRawMany<{ id: string }>();
-    const total = todos.length;
+    // La paginación y el orden se hacen en la base de datos: solo se traen las filas de la página.
+    const total = await filtro.getCount();
+    const pagina = await filtro
+      .clone()
+      .select('a.id', 'id')
+      .orderBy(orden.columna, orden.direccion, 'NULLS LAST')
+      .addOrderBy('a.id', 'ASC')
+      .offset(offset)
+      .limit(rows)
+      .getRawMany<{ id: string }>();
 
     let data: ReturnType<typeof toAtraccionResponse>[] = [];
-    if (total > 0) {
-      const filas = await this.atracciones.find({ where: { id: In(todos.map((t) => t.id)) } });
-      filas.sort(this.ordenador(dto.sort?.by));
-      data = filas.slice(offset, offset + rows).map(toAtraccionResponse);
+    if (pagina.length) {
+      const filas = await this.atracciones.find({ where: { id: In(pagina.map((p) => p.id)) } });
+      const porId = new Map(filas.map((f) => [f.id, f]));
+      data = pagina.map((p) => porId.get(p.id)).filter((f): f is Atraccion => !!f).map(toAtraccionResponse);
     }
 
     const siguiente = offset + rows < total ? this.crearTokenPagina(offset + rows) : undefined;
@@ -278,10 +289,14 @@ export class AtraccionesService {
     });
   }
 
-  /** GET /atracciones/reservations */
-  async getReservations(): Promise<ReservationResponseDto[]> {
-    const filas = await this.reservas.find({ order: { createdAt: 'DESC' } });
-    return filas.map(toReservationResponse);
+  /** GET /atracciones/reservations?limit=&offset=  (paginado; el total va en la cabecera X-Total-Count) */
+  async getReservations(limit = 10, offset = 0): Promise<{ data: ReservationResponseDto[]; total: number }> {
+    const [filas, total] = await this.reservas.findAndCount({
+      order: { createdAt: 'DESC' },
+      take: limit,
+      skip: offset,
+    });
+    return { data: filas.map(toReservationResponse), total };
   }
 
   /** GET /atracciones/reservations/:reservationId */
@@ -443,17 +458,18 @@ export class AtraccionesService {
     }
   }
 
-  private ordenador(criterio?: string) {
+  /** Columna de la base por la que se ordena la búsqueda (sort.by del contrato). */
+  private columnaOrden(criterio?: string): { columna: string; direccion: 'ASC' | 'DESC' } {
     switch (criterio) {
       case 'price_asc':
-        return (a: Atraccion, b: Atraccion) => a.precioTicket - b.precioTicket;
+        return { columna: 'a.precioTicket', direccion: 'ASC' };
       case 'price_desc':
-        return (a: Atraccion, b: Atraccion) => b.precioTicket - a.precioTicket;
+        return { columna: 'a.precioTicket', direccion: 'DESC' };
       case 'top_rated':
-        return (a: Atraccion, b: Atraccion) => (b.puntuacion ?? 0) - (a.puntuacion ?? 0);
+        return { columna: 'a.puntuacion', direccion: 'DESC' };
       case 'most_popular':
       default:
-        return (a: Atraccion, b: Atraccion) => b.numeroResenas - a.numeroResenas;
+        return { columna: 'a.numeroResenas', direccion: 'DESC' };
     }
   }
 

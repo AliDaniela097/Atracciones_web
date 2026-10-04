@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsDateString, IsInt, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { IsArray, IsDateString, IsInt, IsNumber, IsOptional, IsString, Max, Min, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class DatesFilterDto {
@@ -39,24 +39,28 @@ export class SortDto {
 }
 
 export class SearchAtraccionesDto {
-  @ApiProperty({ description: 'Moneda solicitada', example: 'EUR' })
+  @ApiProperty({ description: 'Moneda solicitada', example: 'USD', required: false })
   @IsString()
-  currency: string;
+  @IsOptional()
+  currency?: string;
 
-  @ApiProperty({ description: 'IDs de ciudades', example: [-2140479] })
+  @ApiProperty({ description: 'IDs de ciudades', example: [1], required: false })
   @IsArray()
   @IsInt({ each: true })
-  cities: number[];
+  @IsOptional()
+  cities?: number[];
 
-  @ApiProperty({ description: 'Códigos de países ISO', example: ['nl'] })
+  @ApiProperty({ description: 'Códigos de países ISO', example: ['ec'], required: false })
   @IsArray()
   @IsString({ each: true })
-  countries: string[];
+  @IsOptional()
+  countries?: string[];
 
-  @ApiProperty({ description: 'Rango de fechas', type: DatesFilterDto })
+  @ApiProperty({ description: 'Rango de fechas', type: DatesFilterDto, required: false })
   @ValidateNested()
   @Type(() => DatesFilterDto)
-  dates: DatesFilterDto;
+  @IsOptional()
+  dates?: DatesFilterDto;
 
   @ApiProperty({ description: 'Filtros adicionales', type: FiltersDto, required: false })
   @ValidateNested()
@@ -69,12 +73,16 @@ export class SearchAtraccionesDto {
   @IsOptional()
   next_page?: string;
 
-  @ApiProperty({ description: 'Cantidad de filas a retornar', example: 20 })
+  @ApiProperty({ description: 'Cantidad de filas a retornar (1 a 100)', example: 20, required: false })
   @IsInt()
-  rows: number;
+  @Min(1)
+  @Max(100)
+  @IsOptional()
+  rows?: number;
 
-  @ApiProperty({ description: 'Ordenamiento', type: SortDto })
+  @ApiProperty({ description: 'Ordenamiento: most_popular, top_rated, price_asc, price_desc', type: SortDto, required: false })
   @ValidateNested()
   @Type(() => SortDto)
-  sort: SortDto;
+  @IsOptional()
+  sort?: SortDto;
 }

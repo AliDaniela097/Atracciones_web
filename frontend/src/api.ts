@@ -22,12 +22,15 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     ...options,
     headers: { 'Content-Type': 'application/json', ...(options.headers ?? {}) },
   });
-  if (!res.ok) {
-    const problem = (await res.json().catch(() => null)) as ProblemDetails | null;
-    throw new ApiError(problem ?? { type: 'error', title: `Error ${res.status}`, status: res.status });
-  }
+  if (!res.ok) await lanzarError(res);
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
+}
+
+/** Convierte la respuesta de error del backend (RFC 7807) en un ApiError */
+async function lanzarError(res: Response): Promise<never> {
+  const problem = (await res.json().catch(() => null)) as ProblemDetails | null;
+  throw new ApiError(problem ?? { type: 'error', title: `Error ${res.status}`, status: res.status });
 }
 
 /** Fecha de hoy (YYYY-MM-DD) más N días */
@@ -78,7 +81,14 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
-  listarReservas: () => request<Reservation[]>('/atracciones/reservations'),
+  /** Paginado: el contrato devuelve un arreglo, y el total viene en la cabecera X-Total-Count */
+  listarReservas: async (limit = 10, offset = 0) => {
+    const res = await fetch(`${API}/atracciones/reservations?limit=${limit}&offset=${offset}`, { cache: 'no-store' });
+    if (!res.ok) await lanzarError(res);
+    const data = (await res.json()) as Reservation[];
+    const total = Number(res.headers.get('X-Total-Count') ?? data.length);
+    return { data, total };
+  },
 
   obtenerReserva: (id: string) => request<Reservation>(`/atracciones/reservations/${id}`),
 

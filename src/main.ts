@@ -10,7 +10,8 @@ async function bootstrap() {
   app.setGlobalPrefix('api/v1');
   
   // Permite que el frontend (otro dominio/puerto) llame a la API
-  app.enableCors();
+  // exposedHeaders: deja que el navegador lea el total de la paginación y la ubicación del recurso creado
+  app.enableCors({ exposedHeaders: ['X-Total-Count', 'Location'] });
 
   // Todos los errores salen en formato RFC 7807, como pide el contrato
   app.useGlobalFilters(new ProblemDetailsFilter());

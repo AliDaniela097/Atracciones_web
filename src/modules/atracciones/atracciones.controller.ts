@@ -51,10 +51,15 @@ export class AtraccionesController {
   }
 
   @Get('reservations')
-  @ApiOperation({ summary: 'Historial de reservas' })
+  @ApiOperation({ summary: 'Historial de reservas (paginado con limit y offset; el total va en la cabecera X-Total-Count)' })
   @ApiResponse({ status: 200, description: 'Listado de reservas.', type: [ReservationResponseDto] })
-  getReservations(): Promise<ReservationResponseDto[]> {
-    return this.atraccionesService.getReservations();
+  async getReservations(
+    @Query() query: ListAtraccionesQueryDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<ReservationResponseDto[]> {
+    const { data, total } = await this.atraccionesService.getReservations(query.limit, query.offset);
+    res.setHeader('X-Total-Count', String(total));
+    return data;
   }
 
   @Get('reservations/:reservationId')

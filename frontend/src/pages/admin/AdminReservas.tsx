@@ -9,14 +9,27 @@ const ESTADOS: Record<string, string> = {
   CANCELLED: 'Cancelada',
 };
 
+const POR_PAGINA = 10;
+
 export default function AdminReservas() {
   const [reservas, setReservas] = useState<Reservation[]>([]);
+  const [pagina, setPagina] = useState(1);
+  const [total, setTotal] = useState(0);
   const [error, setError] = useState('');
 
+  // GET /atracciones/reservations?limit=&offset=
   const cargar = () => {
-    api.listarReservas().then(setReservas).catch((e: Error) => setError(e.message));
+    api
+      .listarReservas(POR_PAGINA, (pagina - 1) * POR_PAGINA)
+      .then((r) => {
+        setReservas(r.data);
+        setTotal(r.total);
+      })
+      .catch((e: Error) => setError(e.message));
   };
-  useEffect(cargar, []);
+  useEffect(cargar, [pagina]);
+
+  const totalPaginas = Math.max(1, Math.ceil(total / POR_PAGINA));
 
   const cancelar = async (r: Reservation) => {
     const motivo = window.prompt('Motivo de la cancelación:', 'Cancelada por administración');
@@ -67,6 +80,12 @@ export default function AdminReservas() {
           ))}
         </tbody>
       </table>
+
+      <div className="paginacion">
+        <button className="btn secundario" disabled={pagina <= 1} onClick={() => setPagina(pagina - 1)}>Anterior</button>
+        <span>Página {pagina} de {totalPaginas} · {total} reservas</span>
+        <button className="btn secundario" disabled={pagina >= totalPaginas} onClick={() => setPagina(pagina + 1)}>Siguiente</button>
+      </div>
     </section>
   );
 }

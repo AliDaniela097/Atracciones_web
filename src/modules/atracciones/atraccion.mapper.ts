@@ -4,6 +4,8 @@ import { AtraccionResponseDto } from './dto/atraccion-response.dto';
 import { ReservationResponseDto } from './dto/reservation.dto';
 
 const BASE = '/api/v1/atracciones';
+// Página pública de la atracción en el marketplace (campo "url.web" del contrato)
+const WEB = (process.env.FRONTEND_URL ?? 'http://localhost:5173').replace(/\/$/, '');
 
 /**
  * Traduce una fila de la base de datos (nombres en español)
@@ -34,6 +36,7 @@ export function toAtraccionResponse(a: Atraccion): AtraccionResponseDto {
     supported_languages: a.idiomas ?? [],
     free_cancellation: a.cancelacionGratuita,
     ratings: { number_of_reviews: a.numeroResenas, score: a.puntuacion ?? 0 },
+    url: { web: `${WEB}/atraccion/${a.id}` },
     _links: {
       self: { href: `${BASE}/${a.id}`, method: 'GET' },
       actualizar: { href: `${BASE}/${a.id}`, method: 'PATCH' },

@@ -7,9 +7,9 @@ export class PriceDto {
   @IsString()
   currency: string;
 
-  @ApiProperty({ description: 'Monto total', example: 45.00 })
+  @ApiProperty({ description: 'Monto total (0 = gratis)', example: 45.00 })
   @IsNumber()
-  @IsPositive()
+  @Min(0)
   total: number;
 }
 
