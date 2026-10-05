@@ -37,3 +37,6 @@ lerna-debug.log*
 .env
 .env.test
 .env.production
+
+# Memoria de compilación incremental de TypeScript (se regenera sola)
+*.tsbuildinfo
