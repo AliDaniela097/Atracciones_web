@@ -11,10 +11,12 @@ import { FotoAtraccion } from './entities/foto-atraccion.entity';
 import { Reserva } from './entities/reserva.entity';
 import { ClaveIdempotencia } from './entities/clave-idempotencia.entity';
 import { CiudadesSeed } from './seeds/ciudades.seed';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
     CommonModule,
+    AuthModule,
     TypeOrmModule.forFeature([
       Atraccion,
       Ciudad,

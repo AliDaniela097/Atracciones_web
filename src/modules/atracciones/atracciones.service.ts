@@ -24,6 +24,7 @@ import {
 } from './dto/reservation.dto';
 import { LocationDto, PhotoDto } from './dto/nested-types.dto';
 import { toAtraccionResponse, toReservationResponse } from './atraccion.mapper';
+import { esOperador, type UsuarioToken } from '../auth/roles';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/;
@@ -220,9 +221,15 @@ export class AtraccionesService {
   // RESERVAS
   // =====================================================================
 
-  /** POST /atracciones/:id/reservations  (requiere Idempotency-Key) */
-  async reserve(id: string, dto: ReservationRequestDto, idempotencyKey: string): Promise<ReservationResponseDto> {
-    return this.conIdempotencia(idempotencyKey, `POST /atracciones/${id}/reservations`, 201, async (m) => {
+  /** POST /atracciones/:id/reservations  (requiere token con attractions:book e Idempotency-Key) */
+  async reserve(
+    id: string,
+    dto: ReservationRequestDto,
+    idempotencyKey: string,
+    usuario: UsuarioToken,
+  ): Promise<ReservationResponseDto> {
+    // La clave de idempotencia se asocia también al usuario: nadie puede reutilizar la clave de otro
+    return this.conIdempotencia(idempotencyKey, `POST /atracciones/${id}/reservations|${usuario.id}`, 201, async (m) => {
       this.validarFecha(dto.date);
       if (dto.date < this.hoy()) throw new BadRequestException('La fecha de la reserva ya pasó');
 
@@ -250,6 +257,7 @@ export class AtraccionesService {
       const reserva = await m.save(
         m.create(Reserva, {
           atraccionId: id,
+          usuarioId: usuario.id,
           fecha: dto.date,
           hora: dto.time ?? null,
           cantidadTickets: dto.ticket_count,
@@ -264,15 +272,17 @@ export class AtraccionesService {
     });
   }
 
-  /** POST /atracciones/reservations/:reservationId/cancel  (requiere Idempotency-Key) */
+  /** POST /atracciones/reservations/:reservationId/cancel  (requiere token con attractions:cancel e Idempotency-Key) */
   async cancelReservation(
     reservationId: string,
     dto: CancelReservationRequestDto,
     idempotencyKey: string,
+    usuario: UsuarioToken,
   ): Promise<ReservationResponseDto> {
-    return this.conIdempotencia(idempotencyKey, `POST /atracciones/reservations/${reservationId}/cancel`, 200, async (m) => {
+    return this.conIdempotencia(idempotencyKey, `POST /atracciones/reservations/${reservationId}/cancel|${usuario.id}`, 200, async (m) => {
       const reserva = await m.findOne(Reserva, { where: { id: reservationId } });
-      if (!reserva) throw new NotFoundException(`La reserva ${reservationId} no existe`);
+      // Un cliente solo puede cancelar sus propias reservas (si no es suya, se responde como si no existiera)
+      if (!reserva || !this.puedeVer(reserva, usuario)) throw new NotFoundException(`La reserva ${reservationId} no existe`);
       if (reserva.estado === ReservationStatus.CANCELLED) {
         throw new ConflictException('La reserva ya estaba cancelada');
       }
@@ -289,9 +299,17 @@ export class AtraccionesService {
     });
   }
 
-  /** GET /atracciones/reservations?limit=&offset=  (paginado; el total va en la cabecera X-Total-Count) */
-  async getReservations(limit = 10, offset = 0): Promise<{ data: ReservationResponseDto[]; total: number }> {
+  /**
+   * GET /atracciones/reservations?limit=&offset=  (paginado; el total va en la cabecera X-Total-Count)
+   * El cliente ve solo su historial; el operador ve todas las reservas.
+   */
+  async getReservations(
+    usuario: UsuarioToken,
+    limit = 10,
+    offset = 0,
+  ): Promise<{ data: ReservationResponseDto[]; total: number }> {
     const [filas, total] = await this.reservas.findAndCount({
+      where: esOperador(usuario) ? {} : { usuarioId: usuario.id },
       order: { createdAt: 'DESC' },
       take: limit,
       skip: offset,
@@ -299,11 +317,16 @@ export class AtraccionesService {
     return { data: filas.map(toReservationResponse), total };
   }
 
-  /** GET /atracciones/reservations/:reservationId */
-  async getReservationById(reservationId: string): Promise<ReservationResponseDto> {
+  /** GET /atracciones/reservations/:reservationId  (el cliente solo ve las suyas) */
+  async getReservationById(reservationId: string, usuario: UsuarioToken): Promise<ReservationResponseDto> {
     const reserva = await this.reservas.findOne({ where: { id: reservationId } });
-    if (!reserva) throw new NotFoundException(`La reserva ${reservationId} no existe`);
+    if (!reserva || !this.puedeVer(reserva, usuario)) throw new NotFoundException(`La reserva ${reservationId} no existe`);
     return toReservationResponse(reserva);
+  }
+
+  /** El operador ve todas las reservas; el cliente, solo las que hizo con su cuenta */
+  private puedeVer(reserva: Reserva, usuario: UsuarioToken) {
+    return esOperador(usuario) || reserva.usuarioId === usuario.id;
   }
 
   // =====================================================================

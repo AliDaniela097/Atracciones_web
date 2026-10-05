@@ -8,6 +8,7 @@ import { CommonModule } from './common/common.module';
 //import { AlojamientosModule } from './modules/alojamientos/alojamientos.module';
 // import { AutosModule } from './modules/autos/autos.module';
 import { AtraccionesModule } from './modules/atracciones/atracciones.module';
+import { AuthModule } from './modules/auth/auth.module';
 // import { VuelosModule } from './modules/vuelos/vuelos.module';
 
 @Module({
@@ -38,6 +39,9 @@ import { AtraccionesModule } from './modules/atracciones/atracciones.module';
 
     // Módulos Compartidos
     CommonModule,
+
+    // Autenticación con tokens JWT (scopes del contrato: attractions:read, book, cancel, write)
+    AuthModule,
 
     // =========================================================================
     // ATENCIÓN ALUMNO: Descomenta solo el módulo que corresponde a tu grupo

@@ -26,6 +26,10 @@ export class Reserva {
   @Column({ type: 'int' })
   cantidadTickets: number;
 
+  /** Cuenta que hizo la reserva (dueña). Las reservas antiguas, sin cuenta, quedan en null. */
+  @Column({ type: 'uuid', nullable: true })
+  usuarioId: string | null;
+
   @Column({ type: 'varchar', length: 150 })
   nombreCliente: string;
 

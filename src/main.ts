@@ -30,7 +30,17 @@ async function bootstrap() {
     .split(',')
     .map((o) => o.trim())
     .filter(Boolean);
-  app.enableCors({ origin: origenes, exposedHeaders: ['X-Total-Count', 'Location'] });
+  const enProduccion = process.env.NODE_ENV === 'production';
+  app.enableCors({
+    origin: (origen, responder) => {
+      // Sin origen: llamadas servidor a servidor, Postman o Swagger
+      if (!origen || origenes.includes(origen)) return responder(null, true);
+      // En desarrollo se acepta cualquier puerto de localhost (Vite puede abrir en 5173, 5174...)
+      if (!enProduccion && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origen)) return responder(null, true);
+      return responder(null, false);
+    },
+    exposedHeaders: ['X-Total-Count', 'Location'],
+  });
 
   // Todos los errores salen en formato RFC 7807, como pide el contrato
   app.useGlobalFilters(new ProblemDetailsFilter());
@@ -47,6 +57,8 @@ async function bootstrap() {
     .setTitle('Booking Prototipo API')
     .setDescription('API base para los dominios de Alojamientos, Autos, Atracciones y Vuelos.')
     .setVersion('1.0')
+    // Botón "Authorize" en Swagger: se pega el access_token que devuelve POST /auth/login
+    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' })
     .build();
   
   const document = SwaggerModule.createDocument(app, config);

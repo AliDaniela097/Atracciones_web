@@ -83,3 +83,20 @@ export interface ProblemDetails {
   detail?: string;
   instance?: string;
 }
+// ---------- Autenticación (POST /auth/login y /auth/registro) ----------
+export type Rol = 'CLIENTE' | 'OPERADOR';
+
+export interface Usuario {
+  id: string;
+  name: string;
+  email: string;
+  role: Rol;
+}
+
+export interface TokenResponse {
+  access_token: string;
+  token_type: 'Bearer';
+  expires_in: number;
+  scope: string;
+  user: Usuario;
+}

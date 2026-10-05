@@ -17,6 +17,8 @@ import { AvailabilityResponseDto } from './dto/availability.dto';
 import { ReservationRequestDto, ReservationResponseDto, CancelReservationRequestDto } from './dto/reservation.dto';
 import { IdempotencyKeyGuard } from '../../common/guards/idempotency-key.guard';
 import { Throttle } from '@nestjs/throttler';
+import { RequiereScopes, UsuarioActual } from '../auth/requiere-scopes.decorator';
+import { SCOPES, type UsuarioToken } from '../auth/roles';
 
 /** Reservar y cancelar: máximo 10 por minuto por IP (evita abuso y reservas masivas). */
 const LIMITE_TRANSACCIONAL = { default: { limit: 10, ttl: 60_000 } };
@@ -57,11 +59,13 @@ export class AtraccionesController {
   @Get('reservations')
   @ApiOperation({ summary: 'Historial de reservas (paginado con limit y offset; el total va en la cabecera X-Total-Count)' })
   @ApiResponse({ status: 200, description: 'Listado de reservas.', type: [ReservationResponseDto] })
+  @RequiereScopes(SCOPES.LEER)
   async getReservations(
     @Query() query: ListAtraccionesQueryDto,
     @Res({ passthrough: true }) res: Response,
+    @UsuarioActual() usuario: UsuarioToken,
   ): Promise<ReservationResponseDto[]> {
-    const { data, total } = await this.atraccionesService.getReservations(query.limit, query.offset);
+    const { data, total } = await this.atraccionesService.getReservations(usuario, query.limit, query.offset);
     res.setHeader('X-Total-Count', String(total));
     return data;
   }
@@ -71,8 +75,12 @@ export class AtraccionesController {
   @ApiParam({ name: 'reservationId', format: 'uuid' })
   @ApiResponse({ status: 200, description: 'Detalle de la reserva.', type: ReservationResponseDto })
   @ApiResponse({ status: 404, description: 'Reserva no encontrada.' })
-  getReservationById(@Param('reservationId', ParseUUIDPipe) reservationId: string): Promise<ReservationResponseDto> {
-    return this.atraccionesService.getReservationById(reservationId);
+  @RequiereScopes(SCOPES.LEER)
+  getReservationById(
+    @Param('reservationId', ParseUUIDPipe) reservationId: string,
+    @UsuarioActual() usuario: UsuarioToken,
+  ): Promise<ReservationResponseDto> {
+    return this.atraccionesService.getReservationById(reservationId, usuario);
   }
 
   @Post('reservations/:reservationId/cancel')
@@ -84,12 +92,14 @@ export class AtraccionesController {
   @ApiResponse({ status: 200, description: 'Cancelación procesada.', type: ReservationResponseDto })
   @ApiResponse({ status: 404, description: 'Reserva no encontrada.' })
   @ApiResponse({ status: 409, description: 'Conflicto o error de idempotencia.' })
+  @RequiereScopes(SCOPES.CANCELAR)
   cancelReservation(
     @Param('reservationId', ParseUUIDPipe) reservationId: string,
     @Body() dto: CancelReservationRequestDto,
     @Headers('idempotency-key') idempotencyKey: string,
+    @UsuarioActual() usuario: UsuarioToken,
   ): Promise<ReservationResponseDto> {
-    return this.atraccionesService.cancelReservation(reservationId, dto, idempotencyKey);
+    return this.atraccionesService.cancelReservation(reservationId, dto, idempotencyKey, usuario);
   }
 
   // ===================== COLECCIÓN =====================
@@ -107,6 +117,7 @@ export class AtraccionesController {
   @ApiOperation({ summary: 'Registrar una nueva atracción' })
   @ApiResponse({ status: 201, description: 'Atracción creada. Devuelve cabecera Location.', type: AtraccionResponseDto })
   @ApiResponse({ status: 400, description: 'Datos de entrada inválidos.' })
+  @RequiereScopes(SCOPES.ESCRIBIR)
   async create(
     @Body() createAtraccionDto: CreateAtraccionDto,
     @Res({ passthrough: true }) res: Response,
@@ -136,6 +147,7 @@ export class AtraccionesController {
   @ApiResponse({ status: 204, description: 'Reemplazo exitoso sin contenido.' })
   @ApiResponse({ status: 400, description: 'Datos de entrada inválidos.' })
   @ApiResponse({ status: 404, description: 'La atracción no existe.' })
+  @RequiereScopes(SCOPES.ESCRIBIR)
   replace(@Param('id', ParseUUIDPipe) id: string, @Body() dto: CreateAtraccionDto): Promise<void> {
     return this.atraccionesService.replace(id, dto);
   }
@@ -146,6 +158,7 @@ export class AtraccionesController {
   @ApiResponse({ status: 200, description: 'Actualización exitosa.', type: AtraccionResponseDto })
   @ApiResponse({ status: 400, description: 'Datos de entrada inválidos.' })
   @ApiResponse({ status: 404, description: 'La atracción no existe.' })
+  @RequiereScopes(SCOPES.ESCRIBIR)
   update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateAtraccionDto): Promise<AtraccionResponseDto> {
     return this.atraccionesService.update(id, dto);
   }
@@ -156,6 +169,7 @@ export class AtraccionesController {
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiResponse({ status: 204, description: 'Eliminación exitosa sin contenido.' })
   @ApiResponse({ status: 404, description: 'La atracción no existe.' })
+  @RequiereScopes(SCOPES.ESCRIBIR)
   delete(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
     return this.atraccionesService.delete(id);
   }
@@ -180,11 +194,13 @@ export class AtraccionesController {
   @ApiResponse({ status: 400, description: 'Datos inválidos.' })
   @ApiResponse({ status: 404, description: 'La atracción no existe.' })
   @ApiResponse({ status: 409, description: 'Conflicto o error de idempotencia.' })
+  @RequiereScopes(SCOPES.RESERVAR)
   reserve(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() reservationDto: ReservationRequestDto,
     @Headers('idempotency-key') idempotencyKey: string,
+    @UsuarioActual() usuario: UsuarioToken,
   ): Promise<ReservationResponseDto> {
-    return this.atraccionesService.reserve(id, reservationDto, idempotencyKey);
+    return this.atraccionesService.reserve(id, reservationDto, idempotencyKey, usuario);
   }
 }
