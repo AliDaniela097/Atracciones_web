@@ -1,35 +1,29 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api, fechaMasDias } from '../api';
-import type { Atraccion, Availability, Reservation } from '../types';
-import { ciudadDe, formatoDuracion, nombreIdioma, precioTexto, TIPOS_PRODUCTO } from '../ciudades';
+import type { Atraccion, Availability } from '../types';
+import { ciudadDe, coordenadasTexto, formatoDuracion, nombreIdioma, precioTexto, TIPOS_PRODUCTO } from '../ciudades';
 import MediaAtraccion from '../components/MediaAtraccion';
 import Icono from '../components/Icono';
 import { EstadoError, MensajeError } from '../components/Estados';
-import BotonCopiar from '../components/BotonCopiar';
-import { useAuth } from '../auth';
+import { dinero, MAX_ENTRADAS_POR_LINEA, useCarrito } from '../carrito';
 
 export default function Detalle() {
   const { id = '' } = useParams();
-  const { usuario } = useAuth();
+  const navigate = useNavigate();
+  const { agregar, enCarrito, cantidadTotal } = useCarrito();
   const [a, setA] = useState<Atraccion | null>(null);
   const [error, setError] = useState('');
   const [intento, setIntento] = useState(0);
 
-  // Formulario de reserva
+  // Selección de fecha, horario y entradas (se agrega al carrito; el pago se hace en el checkout)
   const [fecha, setFecha] = useState(fechaMasDias(1));
   const [disp, setDisp] = useState<Availability | null>(null);
   const [cargandoDisp, setCargandoDisp] = useState(true);
   const [hora, setHora] = useState('');
   const [cantidad, setCantidad] = useState(1);
-  // Se completan con los datos de la cuenta; el cliente puede cambiarlos (por ejemplo, si reserva para otra persona)
-  const [nombre, setNombre] = useState(usuario?.name ?? '');
-  const [email, setEmail] = useState(usuario?.email ?? '');
-  const [enviando, setEnviando] = useState(false);
-  const [reserva, setReserva] = useState<Reservation | null>(null);
-  const [errorReserva, setErrorReserva] = useState('');
-  // Una clave por intento de compra: si hay que reintentar, se reutiliza y no se duplica la reserva
-  const [clave, setClave] = useState(() => crypto.randomUUID());
+  const [aviso, setAviso] = useState('');
+  const [errorCarrito, setErrorCarrito] = useState('');
 
   // GET /atracciones/{id}
   useEffect(() => {
@@ -43,6 +37,7 @@ export default function Detalle() {
     if (!fecha) return;
     let vigente = true;
     setCargandoDisp(true);
+    setAviso('');
     api
       .disponibilidad(id, fecha)
       .then((d) => {
@@ -55,30 +50,37 @@ export default function Detalle() {
     return () => {
       vigente = false;
     };
-  }, [id, fecha, reserva]);
+  }, [id, fecha]);
 
-  const reservar = async (e: FormEvent) => {
-    e.preventDefault();
-    setEnviando(true);
-    setErrorReserva('');
-    try {
-      const r = await api.reservar(
-        id,
-        {
-          date: fecha,
-          ticket_count: cantidad,
-          customer_name: nombre.trim(),
-          ...(hora ? { time: hora } : {}),
-          ...(email ? { customer_email: email.trim() } : {}),
-        },
-        clave,
-      );
-      setReserva(r);
-      setClave(crypto.randomUUID()); // la próxima compra usa una clave nueva
-    } catch (err) {
-      setErrorReserva((err as Error).message);
-    } finally {
-      setEnviando(false);
+  // Cupos libres descontando lo que el cliente ya tiene en su carrito para esa fecha
+  const yaEnCarrito = enCarrito(id, fecha);
+  const libres = disp ? Math.max(disp.available_spots - yaEnCarrito, 0) : 0;
+  const maximo = Math.max(Math.min(libres, MAX_ENTRADAS_POR_LINEA), 1);
+
+  const agregarAlCarrito = (irAlCarrito: boolean) => (e?: FormEvent) => {
+    e?.preventDefault();
+    setErrorCarrito('');
+    if (!a || !disp) return;
+    if (cantidad < 1 || cantidad > libres) {
+      setErrorCarrito(libres === 0 ? 'Ya no quedan cupos libres para esta fecha.' : `Puedes agregar hasta ${libres} entradas para esta fecha.`);
+      return;
+    }
+    agregar({
+      atraccionId: a.id,
+      nombre: a.name,
+      ciudadId: a.locations[0]?.city,
+      foto: a.photos[0]?.url,
+      fecha,
+      ...(hora ? { hora } : {}),
+      cantidad,
+      precioUnitario: a.price.total,
+      moneda: a.price.currency,
+    });
+    if (irAlCarrito) {
+      navigate('/carrito');
+    } else {
+      setAviso(`Agregaste ${cantidad} ${cantidad === 1 ? 'entrada' : 'entradas'} al carrito.`);
+      setCantidad(1);
     }
   };
 
@@ -89,7 +91,7 @@ export default function Detalle() {
       <div className="detalle" aria-busy="true">
         <p className="sr-only" role="status">Cargando atracción…</p>
         <div>
-          <div className="detalle-portada fantasma" />
+          <div className="mosaico-cargando fantasma" />
           <div className="fantasma fantasma--linea" style={{ width: '60%', height: 28 }} />
           <div className="fantasma fantasma--linea" />
           <div className="fantasma fantasma--linea corta" />
@@ -101,8 +103,6 @@ export default function Detalle() {
 
   const ciudad = ciudadDe(a);
   const ubicacion = a.locations[0];
-  const sinCupos = disp?.available_spots === 0;
-  const total = a.price.total * cantidad;
 
   return (
     <>
@@ -111,38 +111,39 @@ export default function Detalle() {
         Volver a explorar
       </Link>
 
+      <header className="detalle-cabecera">
+        <span className="pastilla">{TIPOS_PRODUCTO[a.product_type]}</span>
+        <h1>{a.name}</h1>
+        <div className="detalle-meta">
+          <span>
+            <Icono nombre="pin" tamano={18} />
+            {ciudad ? `${ciudad.nombre}, aeropuerto ${ciudad.iata}` : 'Ecuador'}
+          </span>
+          <span>
+            <Icono nombre="reloj" tamano={18} />
+            {formatoDuracion(a.duration)}
+          </span>
+          {ubicacion && <span className="detalle-coordenadas">{coordenadasTexto(ubicacion.coordinates.latitude, ubicacion.coordinates.longitude)}</span>}
+          {a.ratings && a.ratings.number_of_reviews > 0 && (
+            <span>
+              <Icono nombre="estrella" tamano={18} />
+              {a.ratings.score.toFixed(1)} de 5 ({a.ratings.number_of_reviews} reseñas)
+            </span>
+          )}
+        </div>
+      </header>
+
+      <div className={`mosaico mosaico--${Math.min(Math.max(a.photos.length, 1), 3)}`}>
+        <div className="mosaico-principal">
+          <MediaAtraccion a={a} />
+        </div>
+        {a.photos.slice(1, 3).map((p, i) => (
+          <img key={p.url} src={p.url} alt={`Foto ${i + 2} de ${a.name}`} loading="lazy" />
+        ))}
+      </div>
+
       <div className="detalle">
         <article className="detalle-info">
-          <div className="detalle-portada">
-            <MediaAtraccion a={a} />
-          </div>
-          {a.photos.length > 1 && (
-            <div className="galeria">
-              {a.photos.slice(1).map((p, i) => (
-                <img key={p.url} src={p.url} alt={`Foto ${i + 2} de ${a.name}`} loading="lazy" />
-              ))}
-            </div>
-          )}
-
-          <span className="pastilla">{TIPOS_PRODUCTO[a.product_type]}</span>
-          <h1 style={{ marginTop: 12 }}>{a.name}</h1>
-          <div className="detalle-meta">
-            <span>
-              <Icono nombre="pin" tamano={18} />
-              {ciudad ? `${ciudad.nombre}, aeropuerto ${ciudad.iata}` : 'Ecuador'}
-            </span>
-            <span>
-              <Icono nombre="reloj" tamano={18} />
-              {formatoDuracion(a.duration)}
-            </span>
-            {a.ratings && a.ratings.number_of_reviews > 0 && (
-              <span>
-                <Icono nombre="estrella" tamano={18} />
-                {a.ratings.score.toFixed(1)} de 5 ({a.ratings.number_of_reviews} reseñas)
-              </span>
-            )}
-          </div>
-
           <p>{a.long_description}</p>
           {ubicacion?.address && <p className="nota">Dirección: {ubicacion.address}</p>}
 
@@ -164,11 +165,13 @@ export default function Detalle() {
           <p className="nota">Operado por {a.operator.name}.</p>
           <p className="nota">Idiomas: {a.supported_languages.map(nombreIdioma).join(', ') || 'no indicado'}.</p>
           <p className={a.free_cancellation ? 'nota nota--ok' : 'nota'}>
-            {a.free_cancellation ? 'Cancelación gratuita.' : 'Esta atracción no permite cancelar la reserva.'}
+            {a.free_cancellation
+              ? 'Cancelación gratuita: puedes cancelar sin costo desde “Mis reservas”.'
+              : 'Esta atracción no permite cancelar la compra.'}
           </p>
         </article>
 
-        <aside className="pase" aria-label="Reservar">
+        <aside className="pase" aria-label="Comprar entradas">
           <div className="pase-cuerpo">
             <p className="pase-ruta">
               <span className="codigo-iata">{ciudad?.iata ?? 'EC'}</span>
@@ -183,112 +186,76 @@ export default function Detalle() {
           <div className="pase-corte" aria-hidden="true" />
 
           <div className="pase-pie">
-            {reserva ? (
-              <div className="confirmacion" role="status">
-                <h2>Reserva confirmada</h2>
-                <p className="nota">La reserva quedó guardada en “Mis reservas”. Este es tu código:</p>
-                <div className="codigo-reserva">
-                  <span>{reserva.reservation_id}</span>
-                  <BotonCopiar texto={reserva.reservation_id} />
-                </div>
-                <p>
-                  {reserva.ticket_count} {reserva.ticket_count === 1 ? 'entrada' : 'entradas'}, total{' '}
-                  <strong>{precioTexto(reserva.total_price)}</strong>
-                </p>
-                <div className="acciones">
-                  <Link to="/mis-reservas" className="btn">
-                    Ver mis reservas
-                  </Link>
-                  <button type="button" className="btn btn--suave" onClick={() => setReserva(null)}>
-                    Hacer otra reserva
-                  </button>
-                </div>
-              </div>
-            ) : !usuario ? (
-              <div className="formulario">
-                <p className="pase-cupos" aria-live="polite">
-                  {cargandoDisp ? (
-                    'Consultando cupos…'
-                  ) : disp ? (
+            <form onSubmit={agregarAlCarrito(false)} className="formulario">
+              <label className="campo">
+                Fecha de la visita
+                <input type="date" value={fecha} min={fechaMasDias(0)} onChange={(e) => setFecha(e.target.value)} required />
+              </label>
+              <p className="pase-cupos" aria-live="polite">
+                {cargandoDisp ? (
+                  'Consultando cupos…'
+                ) : disp ? (
+                  libres === 0 ? (
+                    yaEnCarrito > 0 ? 'Ya tienes en tu carrito todos los cupos de esta fecha.' : 'No quedan cupos para esta fecha. Prueba con otro día.'
+                  ) : (
                     <>
-                      <strong>{disp.available_spots}</strong> cupos para el {fecha}
+                      <strong>{libres}</strong> cupos disponibles
+                      {yaEnCarrito > 0 && ` (tienes ${yaEnCarrito} en tu carrito)`}
                     </>
-                  ) : (
-                    ''
-                  )}
-                </p>
-                <p className="nota">Para reservar necesitas una cuenta. Es gratis y tarda un minuto.</p>
-                <Link to={`/ingresar?volver=${encodeURIComponent(`/atraccion/${id}`)}`} className="btn btn--bloque">
-                  Ingresar para reservar
-                </Link>
-                <Link to={`/registro?volver=${encodeURIComponent(`/atraccion/${id}`)}`} className="btn btn--suave btn--bloque">
-                  Crear cuenta
-                </Link>
-              </div>
-            ) : (
-              <form onSubmit={reservar} className="formulario">
-                <label className="campo">
-                  Fecha de la visita
-                  <input type="date" value={fecha} min={fechaMasDias(0)} onChange={(e) => setFecha(e.target.value)} required />
-                </label>
-                <p className="pase-cupos" aria-live="polite">
-                  {cargandoDisp ? (
-                    'Consultando cupos…'
-                  ) : disp ? (
-                    sinCupos ? (
-                      'No quedan cupos para esta fecha. Prueba con otro día.'
-                    ) : (
-                      <>
-                        <strong>{disp.available_spots}</strong> cupos disponibles
-                      </>
-                    )
-                  ) : (
-                    'No se pudo consultar los cupos para esta fecha.'
-                  )}
-                </p>
-
-                {disp && disp.times.length > 0 && (
-                  <label className="campo">
-                    Horario
-                    <select value={hora} onChange={(e) => setHora(e.target.value)}>
-                      {disp.times.map((t) => (
-                        <option key={t}>{t}</option>
-                      ))}
-                    </select>
-                  </label>
+                  )
+                ) : (
+                  'No se pudo consultar los cupos para esta fecha.'
                 )}
+              </p>
 
+              {disp && disp.times.length > 0 && (
                 <label className="campo">
-                  Número de entradas
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    min={1}
-                    max={Math.max(disp?.available_spots ?? 1, 1)}
-                    value={cantidad}
-                    onChange={(e) => setCantidad(Number(e.target.value))}
-                    required
-                  />
+                  Horario
+                  <select value={hora} onChange={(e) => setHora(e.target.value)}>
+                    {disp.times.map((t) => (
+                      <option key={t}>{t}</option>
+                    ))}
+                  </select>
                 </label>
-                <label className="campo">
-                  Nombre completo
-                  <input value={nombre} onChange={(e) => setNombre(e.target.value)} autoComplete="name" required minLength={3} />
-                </label>
-                <label className="campo">
-                  <span>Correo <small>(opcional)</small></span>
-                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
-                </label>
+              )}
 
-                <p className="resumen-total">
-                  Total
-                  <strong>{precioTexto({ currency: a.price.currency, total })}</strong>
+              <label className="campo">
+                Número de entradas
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  max={maximo}
+                  value={cantidad}
+                  onChange={(e) => setCantidad(Number(e.target.value))}
+                  required
+                />
+              </label>
+
+              <p className="resumen-total">
+                Subtotal
+                <strong>{dinero(a.price.total * cantidad)}</strong>
+              </p>
+              {errorCarrito && <MensajeError>{errorCarrito}</MensajeError>}
+              {aviso && (
+                <p className="aviso-ok" role="status">
+                  <Icono nombre="check" tamano={18} />
+                  {aviso} <Link to="/carrito">Ver carrito ({cantidadTotal})</Link>
                 </p>
-                {errorReserva && <MensajeError>{errorReserva}</MensajeError>}
-                <button className="btn btn--bloque" disabled={enviando || cargandoDisp || sinCupos}>
-                  {enviando ? 'Reservando…' : 'Reservar'}
-                </button>
-              </form>
-            )}
+              )}
+              <button className="btn btn--bloque" disabled={cargandoDisp || !disp || libres === 0}>
+                <Icono nombre="carrito" tamano={18} />
+                Agregar al carrito
+              </button>
+              <button
+                type="button"
+                className="btn btn--suave btn--bloque"
+                disabled={cargandoDisp || !disp || libres === 0}
+                onClick={() => agregarAlCarrito(true)()}
+              >
+                Comprar ahora
+              </button>
+            </form>
           </div>
         </aside>
       </div>

@@ -1,5 +1,6 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth';
+import { useCarrito } from '../carrito';
 import BuscadorDestino from './BuscadorDestino';
 import Icono, { type NombreIcono } from './Icono';
 
@@ -10,14 +11,20 @@ interface Seccion {
   exacta?: boolean;
 }
 
-function Marca({ destino }: { destino: string }) {
+/** Logotipo: un sol dorado cruzado por la línea ecuatorial (Ecuador = latitud 0) */
+function Marca({ destino, conNombre = false }: { destino: string; conNombre?: boolean }) {
   return (
-    <NavLink to={destino} className="marca" aria-label="Atracciones Ecuador, inicio">
-      <svg viewBox="0 0 32 32" width="34" height="34" aria-hidden="true">
-        <rect width="32" height="32" rx="10" fill="var(--acento)" />
-        <path d="M6 23 13.5 11l4 6 2.5-3.5L26 23H6Z" fill="#fff" />
-        <circle cx="22.5" cy="9.5" r="2.5" fill="var(--oro)" />
+    <NavLink to={destino} end className={conNombre ? 'marca marca--nombre' : 'marca'} aria-label="Atracciones Ecuador, inicio">
+      <svg viewBox="0 0 32 32" width="32" height="32" aria-hidden="true">
+        <circle cx="16" cy="16" r="11" fill="none" stroke="var(--oro)" strokeWidth="1.6" />
+        <circle cx="16" cy="16" r="5.5" fill="var(--oro)" />
+        <path d="M1 16h30" stroke="var(--oro)" strokeWidth="1.6" />
       </svg>
+      {conNombre && (
+        <span className="marca-texto">
+          Atracciones <span>Ecuador</span>
+        </span>
+      )}
     </NavLink>
   );
 }
@@ -32,6 +39,25 @@ function Navegacion({ secciones, clase, etiqueta }: { secciones: Seccion[]; clas
         </NavLink>
       ))}
     </nav>
+  );
+}
+
+/** Botón del carrito con la cantidad de entradas */
+function BotonCarrito() {
+  const { cantidadTotal } = useCarrito();
+  return (
+    <NavLink
+      to="/carrito"
+      className="carrito-boton"
+      aria-label={cantidadTotal ? `Carrito, ${cantidadTotal} ${cantidadTotal === 1 ? 'entrada' : 'entradas'}` : 'Carrito vacío'}
+    >
+      <Icono nombre="carrito" tamano={22} />
+      {cantidadTotal > 0 && (
+        <span className="carrito-contador" aria-hidden="true">
+          {cantidadTotal > 99 ? '99+' : cantidadTotal}
+        </span>
+      )}
+    </NavLink>
   );
 }
 
@@ -98,23 +124,42 @@ const SECCIONES_CLIENTE: Seccion[] = [
 /** Vista del turista: catálogo público, reserva con cuenta de cliente */
 export function LayoutCliente() {
   return (
-    <div className="app">
+    <div className="app app--cliente">
       <a href="#contenido" className="saltar">
         Saltar al contenido
       </a>
-      <aside className="lateral">
-        <Marca destino="/" />
-        <Navegacion secciones={SECCIONES_CLIENTE} clase="nav-lateral" etiqueta="Navegación principal" />
-      </aside>
 
       <div className="app-cuerpo">
-        <header className="superior">
+        <header className="superior superior--cliente">
+          <Marca destino="/" conNombre />
+          <nav className="nav-superior" aria-label="Navegación principal">
+            {SECCIONES_CLIENTE.map((s) => (
+              <NavLink key={s.ruta} to={s.ruta} end={s.exacta}>
+                {s.texto}
+              </NavLink>
+            ))}
+          </nav>
           <BuscadorDestino />
+          <BotonCarrito />
           <MenuCuenta />
         </header>
         <main id="contenido" tabIndex={-1}>
           <Outlet />
         </main>
+        <footer className="pie">
+          <p>
+            Atracciones Ecuador: entradas y tours cerca de los aeropuertos con vuelos comerciales del país. Proyecto
+            académico, Integración de Sistemas (PUCE).
+          </p>
+          <p>
+            Fotografías de{' '}
+            <a href="https://commons.wikimedia.org" target="_blank" rel="noreferrer">
+              Wikimedia Commons
+            </a>{' '}
+            con licencias libres (CC0, CC BY y CC BY-SA); autores y licencias de cada foto en el archivo CREDITOS_Y_FUENTES.md
+            del repositorio.
+          </p>
+        </footer>
       </div>
 
       <Navegacion secciones={SECCIONES_CLIENTE} clase="nav-inferior" etiqueta="Navegación principal" />

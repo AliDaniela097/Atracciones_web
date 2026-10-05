@@ -11,6 +11,7 @@ import { FotoAtraccion } from './entities/foto-atraccion.entity';
 import { Reserva } from './entities/reserva.entity';
 import { ClaveIdempotencia } from './entities/clave-idempotencia.entity';
 import { CiudadesSeed } from './seeds/ciudades.seed';
+import { AtraccionesSeed } from './seeds/atracciones.seed';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
@@ -28,6 +29,6 @@ import { AuthModule } from '../auth/auth.module';
     ]),
   ],
   controllers: [AtraccionesController],
-  providers: [AtraccionesService, CiudadesSeed],
+  providers: [AtraccionesService, CiudadesSeed, AtraccionesSeed],
 })
 export class AtraccionesModule {}

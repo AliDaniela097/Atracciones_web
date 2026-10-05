@@ -4,12 +4,15 @@ import { BrowserRouter } from 'react-router-dom';
 import './index.css';
 import App from './App.tsx';
 import { AuthProvider } from './auth';
+import { CarritoProvider } from './carrito';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <App />
+        <CarritoProvider>
+          <App />
+        </CarritoProvider>
       </AuthProvider>
     </BrowserRouter>
   </StrictMode>,

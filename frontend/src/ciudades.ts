@@ -97,3 +97,15 @@ export function precioTexto(p: Price) {
 export function normalizar(texto: string) {
   return texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 }
+
+/** -0.00222, -78.45583 -> "0°0′8″ S, 78°27′21″ O" (Ecuador está sobre la latitud 0) */
+export function coordenadasTexto(lat: number, lng: number) {
+  const gms = (v: number) => {
+    const abs = Math.abs(v);
+    const g = Math.floor(abs);
+    const m = Math.floor((abs - g) * 60);
+    const s = Math.round(((abs - g) * 60 - m) * 60);
+    return `${g}°${m}′${s}″`;
+  };
+  return `${gms(lat)} ${lat < 0 ? 'S' : 'N'}, ${gms(lng)} ${lng < 0 ? 'O' : 'E'}`;
+}

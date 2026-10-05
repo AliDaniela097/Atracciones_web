@@ -3,6 +3,9 @@ import Inicio from './pages/Inicio';
 import Marketplace from './pages/Marketplace';
 import Detalle from './pages/Detalle';
 import MisReservas from './pages/MisReservas';
+import Carrito from './pages/Carrito';
+import Checkout from './pages/Checkout';
+import Comprobante from './pages/Comprobante';
 import { Ingresar, Registro } from './pages/Cuenta';
 import AdminAtracciones from './pages/admin/AdminAtracciones';
 import AtraccionForm from './pages/admin/AtraccionForm';
@@ -25,6 +28,23 @@ export default function App() {
         <Route path="/atraccion/:id" element={<Detalle />} />
         <Route path="/ingresar" element={<Ingresar />} />
         <Route path="/registro" element={<Registro />} />
+        <Route path="/carrito" element={<Carrito />} />
+        <Route
+          path="/checkout"
+          element={
+            <RutaProtegida>
+              <Checkout />
+            </RutaProtegida>
+          }
+        />
+        <Route
+          path="/compra/confirmada"
+          element={
+            <RutaProtegida>
+              <Comprobante />
+            </RutaProtegida>
+          }
+        />
         <Route
           path="/mis-reservas"
           element={

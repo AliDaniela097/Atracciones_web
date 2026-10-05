@@ -90,7 +90,7 @@ export default function PanelAtraccion({ a }: { a: Atraccion | null }) {
           )}
         </p>
         <Link to={`/atraccion/${a.id}`} className="btn btn--bloque">
-          Reservar
+          Comprar entradas
         </Link>
       </div>
     </div>

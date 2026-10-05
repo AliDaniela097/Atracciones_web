@@ -4,54 +4,44 @@
    ========================================================================= */
 
 :root {
-  /* Color: fondo claro y colores vivos del Ecuador (mar, selva, tejidos y bordados) */
-  --fondo: #f4f7fb;
-  --superficie: #ffffff;
-  --elevada: #eaf1f8;
-  --linea: #d8e1ec;
-  --texto: #14213d;
-  --suave: #4a5872;
-  --acento: #0b7a75; /* turquesa de Galápagos: botones y enlaces */
-  --acento-hover: #09635f;
-  --sobre-acento: #ffffff;
-  --coral: #e0512f;
-  --oro: #f2a900;
-  --fucsia: #d02f7e;
-  --verde: #17a06b;
-  --cielo: #1e90d6;
-  --ok: #157a4f;
-  --ok-fondo: #e3f3ec;
-  --peligro: #c0362c;
-  --peligro-fondo: #f9e6e4;
-  --aviso: #8a5a00;
-  --aviso-fondo: #fbf0d9;
+  /* Oscuro elegante: noche andina + oro precolombino. Las fotos son las protagonistas. */
+  --fondo: #0f1513;       /* basalto volcánico, con un toque verde */
+  --superficie: #161e1b;
+  --elevada: #1f2925;
+  --linea: #2e3b35;
+  --texto: #f2ebdc;       /* marfil */
+  --suave: #aeb6ab;
+  --acento: #d9ad52;      /* oro */
+  --acento-hover: #e8c26f;
+  --sobre-acento: #1a1408;
+  --oro: #d9ad52;
+  --coral: #d9ad52;
+  --fucsia: #d9ad52;
+  --verde: #7fbf9a;
+  --cielo: #8fb4c9;
+  --ok: #8fd4ab;
+  --ok-fondo: #183126;
+  --peligro: #f08a7a;
+  --peligro-fondo: #3a1f1b;
+  --aviso: #e8c26f;
+  --aviso-fondo: #33291a;
 
-  /* Franja de tejido: la firma visual de la página (como una faja andina) */
-  --tejido: repeating-linear-gradient(
-    90deg,
-    var(--coral) 0 18px,
-    var(--oro) 18px 28px,
-    var(--verde) 28px 46px,
-    #ffffff 46px 50px,
-    var(--fucsia) 50px 66px,
-    var(--cielo) 66px 80px,
-    #ffffff 80px 84px
-  );
+  /* Línea dorada fina: reemplaza la franja de tejido */
+  --tejido: linear-gradient(90deg, transparent, var(--oro) 20%, var(--oro) 80%, transparent);
 
-  /* Tipografía */
-  --fuente-titulo: 'Bricolage Grotesque', 'Segoe UI', system-ui, sans-serif;
+  /* Tipografía: Bodoni para títulos (elegancia editorial), Manrope para leer */
+  --fuente-titulo: 'Bodoni Moda', Didot, 'Times New Roman', serif;
   --fuente-texto: 'Manrope', 'Segoe UI', system-ui, sans-serif;
 
-  /* Forma: radio grande para contenedores, mediano para controles, completo para chips */
-  --radio-l: 24px;
-  --radio-m: 14px;
-  --radio-s: 10px;
-  --sombra: 0 14px 34px -18px rgb(20 33 61 / 0.35);
+  --radio-l: 14px;
+  --radio-m: 10px;
+  --radio-s: 8px;
+  --sombra: 0 24px 48px -24px rgb(0 0 0 / 0.7);
 
   --lateral: 88px;
   --panel: 360px;
 
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 *,
@@ -187,7 +177,7 @@ main:focus {
   gap: 12px;
   align-items: center;
   padding: 12px 16px;
-  background: rgb(255 255 255 / 0.92);
+  background: rgb(15 21 19 / 0.88);
   box-shadow: 0 1px 0 var(--linea);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
@@ -434,7 +424,7 @@ main:focus {
 }
 
 .btn--peligro:hover {
-  background: #a82e25;
+  background: #e07563;
 }
 
 .btn--bloque {
@@ -507,7 +497,7 @@ main:focus {
 .fila-busqueda input:focus-visible {
   outline: none;
   border-color: var(--acento);
-  box-shadow: 0 0 0 3px rgb(11 122 117 / 0.25);
+  box-shadow: 0 0 0 3px rgb(217 173 82 / 0.25);
 }
 
 .campo input:user-invalid,
@@ -574,7 +564,7 @@ legend {
   padding: 12px 14px;
   border-radius: var(--radio-m);
   background: var(--peligro-fondo);
-  border: 1px solid rgb(192 54 44 / 0.35);
+  border: 1px solid rgb(240 138 122 / 0.4);
   color: var(--peligro);
 }
 
@@ -695,7 +685,7 @@ legend {
   border: 1px solid var(--linea);
   border-radius: var(--radio-l);
   overflow: hidden;
-  box-shadow: 0 6px 20px -14px rgb(20 33 61 / 0.35);
+  box-shadow: none;
 }
 
 .card--activa {
@@ -793,7 +783,7 @@ legend {
   position: absolute;
   top: 12px;
   right: 12px;
-  background: rgb(20 33 61 / 0.78);
+  background: rgb(15 21 19 / 0.78);
   color: #fff;
   backdrop-filter: blur(6px);
 }
@@ -847,7 +837,7 @@ legend {
   justify-content: flex-end;
   padding: 16px 18px 22px;
   background:
-    linear-gradient(to top, rgb(20 33 61 / 0.45), transparent 65%),
+    linear-gradient(to top, rgb(15 21 19 / 0.6), transparent 65%),
     linear-gradient(140deg, var(--c1), var(--c2));
 }
 
@@ -999,7 +989,7 @@ legend {
   position: absolute;
   inset: 0;
   transform: translateX(-100%);
-  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.7), transparent);
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.06), transparent);
   animation: brillo 1.4s ease-in-out infinite;
 }
 
@@ -1050,7 +1040,7 @@ legend {
 
 .estado--error {
   border-style: solid;
-  border-color: rgb(192 54 44 / 0.35);
+  border-color: rgb(240 138 122 / 0.4);
 }
 
 /* ============================ Detalle ============================ */
@@ -1254,7 +1244,7 @@ legend {
 }
 
 .tabla tbody tr:hover {
-  background: rgb(11 122 117 / 0.04);
+  background: rgb(217 173 82 / 0.05);
 }
 
 .tabla .num {
@@ -1726,5 +1716,996 @@ legend {
 
   .cuenta-menu summary {
     padding: 4px;
+  }
+}
+
+/* ============================ Carrito y compra ============================ */
+
+.carrito-boton {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  margin-left: auto;
+  border: 1px solid var(--linea);
+  border-radius: 50%;
+  background: var(--superficie);
+  color: var(--texto);
+}
+
+.carrito-boton:hover,
+.carrito-boton.active {
+  border-color: var(--acento);
+  color: var(--acento);
+}
+
+.carrito-boton + .cuenta,
+.carrito-boton + .cuenta-menu {
+  margin-left: 0;
+}
+
+.carrito-contador {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--coral);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.compra {
+  display: grid;
+  gap: 24px;
+}
+
+@media (min-width: 1024px) {
+  .compra {
+    grid-template-columns: minmax(0, 1fr) 360px;
+    align-items: start;
+  }
+
+  .compra .resumen {
+    position: sticky;
+    top: 96px;
+  }
+}
+
+.lineas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+}
+
+.linea {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  gap: 14px 16px;
+  padding: 14px;
+  background: var(--superficie);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-l);
+}
+
+@media (min-width: 640px) {
+  .linea {
+    grid-template-columns: 110px minmax(0, 1fr) auto;
+    align-items: center;
+  }
+}
+
+.linea-media {
+  text-decoration: none;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: var(--radio-m);
+  background: linear-gradient(140deg, var(--coral), var(--oro));
+}
+
+.linea-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.linea-media .codigo-iata {
+  color: #fff;
+  text-decoration: none;
+  font-size: 1.3rem;
+}
+
+.linea-titulo {
+  font-size: 1.05rem;
+  margin-bottom: 4px;
+}
+
+.linea-titulo a {
+  color: var(--texto);
+  text-decoration: none;
+}
+
+.linea-titulo a:hover {
+  text-decoration: underline;
+}
+
+.linea .nota {
+  margin-bottom: 2px;
+}
+
+.linea .mensaje-error {
+  margin-top: 8px;
+  font-size: 0.9rem;
+}
+
+.linea-acciones {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+@media (min-width: 640px) {
+  .linea-acciones {
+    grid-column: auto;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+}
+
+.linea-subtotal {
+  margin: 0;
+  font-family: var(--fuente-titulo);
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.cantidad {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--linea);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.cantidad button {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  background: var(--elevada);
+  font-size: 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cantidad button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.cantidad span {
+  min-width: 40px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.resumen h2 {
+  font-size: 1.15rem;
+}
+
+.resumen-filas {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.resumen-filas div,
+.resumen-lista li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.resumen-filas dt {
+  color: var(--suave);
+}
+
+.resumen-filas dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.resumen-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+}
+
+.resumen-lista li > span {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.resumen-lista .codigo-reserva {
+  margin-top: 8px;
+}
+
+.aviso-prueba {
+  display: flex;
+  gap: 10px;
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: var(--radio-m);
+  background: var(--aviso-fondo);
+  color: var(--texto);
+  font-size: 0.9rem;
+}
+
+.aviso-prueba .icono {
+  flex: none;
+  color: var(--aviso);
+  margin-top: 2px;
+}
+
+.aviso-prueba code {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.aviso-ok {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radio-m);
+  background: var(--ok-fondo);
+  color: var(--ok);
+  font-weight: 600;
+}
+
+.campo-error {
+  color: var(--peligro) !important;
+  font-weight: 600 !important;
+}
+
+.campo input[aria-invalid='true'] {
+  border-color: var(--peligro);
+}
+
+fieldset:disabled {
+  opacity: 0.7;
+}
+
+.comprobante-ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--ok-fondo);
+  color: var(--ok);
+  font-weight: 700;
+}
+
+/* Impresión del comprobante: solo el contenido, sin menús */
+@media print {
+  .lateral,
+  .nav-inferior,
+  .superior,
+  .no-imprimir,
+  .saltar {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  .app {
+    display: block;
+  }
+
+  .pase {
+    box-shadow: none;
+  }
+}
+
+/* =========================================================================
+   REDISEÑO "OSCURO ELEGANTE" (oct. 2026)
+   Noche andina + oro. Las fotos reales mandan; el resto se mantiene sobrio.
+   Firma visual: coordenadas geográficas en oro (Ecuador está en la latitud 0).
+   ========================================================================= */
+
+body {
+  background: var(--fondo);
+}
+
+h1,
+h2 {
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+h1 {
+  font-size: clamp(2rem, 1.4rem + 2.4vw, 3.2rem);
+  line-height: 1.08;
+}
+
+h2 {
+  font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
+  line-height: 1.15;
+}
+
+h3 {
+  font-family: var(--fuente-texto);
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+::selection {
+  background: var(--oro);
+  color: var(--sobre-acento);
+}
+
+/* Botón claro sobre fotos */
+.btn--vidrio {
+  background: rgb(15 21 19 / 0.35);
+  border-color: rgb(242 235 220 / 0.55);
+  color: var(--texto);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.btn--vidrio:hover {
+  background: rgb(242 235 220 / 0.12);
+}
+
+/* ---------- Cabecera del cliente (sin barra lateral) ---------- */
+
+@media (min-width: 768px) {
+  .app--cliente {
+    display: block;
+  }
+}
+
+.superior::after {
+  height: 1px;
+  opacity: 0.35;
+}
+
+.superior--cliente {
+  gap: 10px;
+}
+
+.marca {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--texto);
+  text-decoration: none;
+  flex: none;
+}
+
+.marca-texto {
+  display: none;
+  font-family: var(--fuente-titulo);
+  font-weight: 600;
+  font-size: 1.2rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.nav-superior {
+  display: none;
+}
+
+@media (min-width: 1100px) {
+  .marca-texto {
+    display: inline;
+  }
+
+  .nav-superior {
+    display: flex;
+    gap: 4px;
+    margin-left: 12px;
+  }
+
+  .nav-superior a {
+    padding: 8px 12px;
+    color: var(--suave);
+    font-weight: 600;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+  }
+
+  .nav-superior a:hover {
+    color: var(--texto);
+  }
+
+  .nav-superior a.active {
+    color: var(--texto);
+    border-bottom-color: var(--oro);
+  }
+
+  .superior--cliente .buscador {
+    margin-left: auto;
+    max-width: 380px;
+  }
+}
+
+.nav-item.active {
+  background: none;
+}
+
+/* Pie de página */
+.pie {
+  margin-top: 48px;
+  padding: 28px 16px 36px;
+  border-top: 1px solid var(--linea);
+  color: var(--suave);
+  font-size: 0.85rem;
+}
+
+.pie p {
+  max-width: 72ch;
+}
+
+@media (min-width: 768px) {
+  .pie {
+    padding: 32px 28px 40px;
+  }
+}
+
+/* ---------- Portada de inicio: fotos grandes ---------- */
+
+.inicio {
+  display: grid;
+  gap: 56px;
+}
+
+.heroe {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  margin: 0 -16px;
+  min-height: min(82vh, 760px);
+  padding: 96px 16px 28px;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.heroe-fotos img {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transform: scale(1.04);
+  transition: opacity 1.4s ease, transform 9s ease-out;
+}
+
+.heroe-fotos img.activa {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.heroe-velo {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(to top, var(--fondo) 0%, rgb(15 21 19 / 0.65) 28%, rgb(15 21 19 / 0.1) 60%),
+    linear-gradient(90deg, rgb(15 21 19 / 0.75) 0%, rgb(15 21 19 / 0.2) 55%, transparent 80%);
+}
+
+.heroe-contenido {
+  max-width: 660px;
+}
+
+.heroe-contenido h1 {
+  font-size: clamp(2.7rem, 1.5rem + 5vw, 5.6rem);
+  line-height: 1;
+  margin-bottom: 18px;
+  text-wrap: balance;
+}
+
+.heroe-contenido p {
+  max-width: 52ch;
+  font-size: 1.08rem;
+  color: rgb(242 235 220 / 0.88);
+}
+
+.heroe-contenido .acciones {
+  margin-top: 22px;
+}
+
+.heroe-lugar {
+  margin-top: 36px;
+  padding-top: 16px;
+  border-top: 1px solid rgb(217 173 82 / 0.45);
+  max-width: 360px;
+}
+
+.heroe-coordenadas,
+.detalle-coordenadas {
+  margin: 0 0 4px;
+  color: var(--oro);
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.heroe-nombre {
+  font-family: var(--fuente-titulo);
+  font-size: 1.35rem;
+  line-height: 1.2;
+  color: var(--texto);
+  text-decoration: none;
+}
+
+.heroe-nombre:hover {
+  text-decoration: underline;
+  text-decoration-color: var(--oro);
+  text-underline-offset: 4px;
+}
+
+.heroe-ciudad {
+  margin: 2px 0 0;
+  color: var(--suave);
+  font-size: 0.9rem;
+}
+
+.heroe-puntos {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 12px -6px 0;
+}
+
+.heroe-puntos button {
+  width: 34px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  position: relative;
+}
+
+.heroe-puntos button::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  top: 50%;
+  height: 2px;
+  background: rgb(242 235 220 / 0.35);
+  transition: background-color 0.3s ease;
+}
+
+.heroe-puntos button[aria-pressed='true']::before {
+  background: var(--oro);
+}
+
+@media (min-width: 768px) {
+  .heroe {
+    margin: 0 -28px;
+    padding: 120px 28px 48px;
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 40px;
+  }
+
+  .heroe-lugar {
+    margin-top: 0;
+    flex: none;
+    width: 300px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .heroe {
+    padding-left: max(28px, calc((100vw - 1240px) / 2));
+    padding-right: max(28px, calc((100vw - 1240px) / 2));
+  }
+}
+
+/* Bloques del inicio: ancho cómodo de lectura */
+.bloque-inicio {
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+.encabezado-bloque {
+  align-items: baseline;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.encabezado-bloque .nota {
+  margin: 0;
+}
+
+/* ---------- Destinos (aeropuertos con foto) ---------- */
+
+.destinos {
+  list-style: none;
+  margin: 0 -16px;
+  padding: 0 16px 6px;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 72%;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+}
+
+.destinos li {
+  scroll-snap-align: start;
+}
+
+.destino {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 5;
+  border-radius: var(--radio-l);
+  overflow: hidden;
+  color: var(--texto);
+  text-decoration: none;
+  background: var(--elevada);
+}
+
+.destino img,
+.destino-sin-foto {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+
+.destino-sin-foto {
+  background: linear-gradient(160deg, var(--elevada), var(--superficie));
+}
+
+.destino::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgb(15 21 19 / 0.92) 0%, rgb(15 21 19 / 0.25) 45%, transparent 70%);
+}
+
+.destino:hover img {
+  transform: scale(1.04);
+}
+
+.destino-texto {
+  position: absolute;
+  z-index: 1;
+  left: 16px;
+  right: 16px;
+  bottom: 14px;
+  display: grid;
+  gap: 2px;
+}
+
+.destino-iata {
+  color: var(--oro);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.destino-ciudad {
+  font-family: var(--fuente-titulo);
+  font-size: 1.45rem;
+  line-height: 1.1;
+}
+
+.destino-cuenta {
+  color: rgb(242 235 220 / 0.75);
+  font-size: 0.85rem;
+}
+
+@media (min-width: 768px) {
+  .destinos {
+    margin: 0;
+    padding: 0;
+    grid-auto-flow: row;
+    grid-template-columns: repeat(3, 1fr);
+    overflow: visible;
+  }
+
+  .destino {
+    aspect-ratio: 16 / 11;
+  }
+}
+
+/* ---------- Tarjetas ---------- */
+
+.grid {
+  gap: 22px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+.card {
+  background: var(--superficie);
+  border-color: var(--linea);
+  transition: border-color 0.2s ease;
+}
+
+.card:hover {
+  border-color: rgb(217 173 82 / 0.55);
+}
+
+.card-media {
+  aspect-ratio: 5 / 4;
+  overflow: hidden;
+}
+
+.card-media .media img {
+  transition: transform 0.6s ease;
+}
+
+.card:hover .card-media .media img {
+  transform: scale(1.04);
+}
+
+.card-titulo {
+  font-family: var(--fuente-titulo);
+  font-weight: 600;
+  font-size: 1.25rem;
+  line-height: 1.2;
+}
+
+.card-precio {
+  font-family: var(--fuente-texto);
+  font-weight: 700;
+  color: var(--oro);
+}
+
+.media-codigo {
+  display: none;
+}
+
+.media--arte {
+  background:
+    radial-gradient(circle at 75% 30%, rgb(217 173 82 / 0.28), transparent 45%),
+    linear-gradient(160deg, var(--elevada), var(--superficie));
+}
+
+.media--arte::after {
+  height: 1px;
+}
+
+.media-iata {
+  font-weight: 600;
+  color: var(--oro);
+}
+
+.media-ciudad {
+  color: var(--texto);
+}
+
+.pastilla {
+  background: rgb(217 173 82 / 0.14);
+  color: var(--oro);
+}
+
+.pastilla--sobre {
+  left: 12px;
+  right: auto;
+  color: var(--texto);
+}
+
+/* ---------- Detalle: cabecera y galería en mosaico ---------- */
+
+.detalle-cabecera {
+  max-width: 1240px;
+  margin: 8px auto 20px;
+}
+
+.detalle-cabecera h1 {
+  margin: 12px 0 10px;
+  font-size: clamp(2.2rem, 1.4rem + 3vw, 3.8rem);
+  text-wrap: balance;
+}
+
+.detalle-cabecera .detalle-meta {
+  align-items: center;
+}
+
+.detalle-cabecera .detalle-coordenadas {
+  margin: 0;
+}
+
+.mosaico {
+  display: grid;
+  gap: 8px;
+  max-width: 1240px;
+  margin: 0 auto 32px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.mosaico > * {
+  border-radius: var(--radio-m);
+  overflow: hidden;
+  background: var(--elevada);
+}
+
+.mosaico-principal {
+  grid-column: 1 / -1;
+  aspect-ratio: 4 / 3;
+}
+
+.mosaico > img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  height: auto;
+  object-fit: cover;
+}
+
+.mosaico-cargando {
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radio-m);
+  margin-bottom: 16px;
+}
+
+@media (min-width: 900px) {
+  .mosaico {
+    height: clamp(380px, 52vh, 540px);
+    grid-template-columns: 2fr 1fr;
+    grid-template-rows: 1fr 1fr;
+  }
+
+  .mosaico-principal {
+    grid-column: 1;
+    grid-row: 1 / -1;
+    aspect-ratio: auto;
+  }
+
+  .mosaico > img {
+    aspect-ratio: auto;
+    height: 100%;
+  }
+
+  .mosaico--2 > img {
+    grid-row: 1 / -1;
+  }
+
+  .mosaico--1 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.detalle {
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+.detalle-info > p:first-child {
+  font-size: 1.08rem;
+  line-height: 1.7;
+  max-width: 68ch;
+}
+
+.lista-incluye .icono {
+  color: var(--oro);
+}
+
+/* ---------- Panel del operador ---------- */
+
+.app--operador .lateral {
+  background: #0b100e;
+}
+
+.resumen-operador {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1px;
+  margin-bottom: 28px;
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-l);
+  overflow: hidden;
+  background: var(--linea);
+}
+
+.kpi {
+  min-height: 112px;
+  padding: 18px 20px;
+  background: var(--superficie);
+}
+
+.kpi.fantasma {
+  border-radius: 0;
+}
+
+.kpi-valor {
+  margin: 0;
+  font-family: var(--fuente-titulo);
+  font-size: clamp(1.9rem, 1.5rem + 1.4vw, 2.6rem);
+  line-height: 1.1;
+  color: var(--oro);
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.kpi-texto {
+  margin: 4px 0 0;
+  color: var(--suave);
+  font-size: 0.9rem;
+}
+
+.kpi-nota {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 10px 20px;
+  background: var(--superficie);
+}
+
+@media (min-width: 900px) {
+  .resumen-operador {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.celda-con-foto {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.celda-con-foto img,
+.miniatura-vacia {
+  width: 56px;
+  height: 42px;
+  flex: none;
+  border-radius: var(--radio-s);
+  object-fit: cover;
+  background: var(--elevada);
+}
+
+.tabla th {
+  color: var(--suave);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .heroe-fotos img,
+  .destino img,
+  .card-media .media img {
+    transition: none;
+    transform: none;
+  }
+}
+
+@media (min-width: 1100px) {
+  .bloque-inicio .grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 900px) {
+  .tabla .acciones {
+    flex-wrap: nowrap;
   }
 }
