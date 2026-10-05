@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../auth';
 import { MensajeError } from '../components/Estados';
+import BotonesSociales from '../components/BotonesSociales';
 
 /** A dónde volver después de ingresar (solo rutas internas, para evitar redirecciones a otros sitios) */
 function useDestino(porDefecto: string) {
@@ -54,6 +55,7 @@ export function Ingresar() {
             {enviando ? 'Ingresando…' : 'Ingresar'}
           </button>
         </form>
+        <BotonesSociales alEntrar={(u) => navigate(destino || (u.role === 'OPERADOR' ? '/admin' : '/'), { replace: true })} />
         <p className="acceso-pie">
           ¿No tienes cuenta?{' '}
           <Link to={`/registro${destino ? `?volver=${encodeURIComponent(destino)}` : ''}`}>Crea una gratis</Link>
@@ -121,6 +123,7 @@ export function Registro() {
             {enviando ? 'Creando cuenta…' : 'Crear cuenta'}
           </button>
         </form>
+        <BotonesSociales alEntrar={() => navigate(destino, { replace: true })} />
         <p className="acceso-pie">
           ¿Ya tienes cuenta? <Link to={`/ingresar${destino !== '/' ? `?volver=${encodeURIComponent(destino)}` : ''}`}>Ingresa</Link>
         </p>

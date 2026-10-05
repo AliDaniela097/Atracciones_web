@@ -4,6 +4,8 @@ import { LLAVE_COMPROBANTE, type Comprobante as DatosComprobante } from './Check
 import BotonCopiar from '../components/BotonCopiar';
 import Icono from '../components/Icono';
 import { EstadoVacio } from '../components/Estados';
+import CodigoQR from '../components/CodigoQR';
+import { codigoCorto, urlVerificacion } from '../reservas';
 
 function leerComprobante(estado: unknown): DatosComprobante | null {
   if (estado && typeof estado === 'object' && 'numero' in estado) return estado as DatosComprobante;
@@ -65,9 +67,17 @@ export default function Comprobante() {
                     {fechaLarga(it.fecha)}
                     {it.hora ? `, ${it.hora}` : ''}. {it.cantidad} {it.cantidad === 1 ? 'entrada' : 'entradas'}
                   </p>
-                  <div className="codigo-reserva">
-                    <span>{it.codigo}</span>
-                    <BotonCopiar texto={it.codigo} />
+                  <div className="entrada-qr">
+                    <CodigoQR valor={urlVerificacion(it.codigo)} etiqueta={`Código QR de la entrada ${codigoCorto(it.codigo)} para ${it.nombre}`} />
+                    <div className="entrada-qr-texto">
+                      <p className="codigo-corto-etiqueta">Código de reserva</p>
+                      <p className="codigo-corto">{codigoCorto(it.codigo)}</p>
+                      <p className="nota">Muestra este QR en la entrada. Si no se puede escanear, dicta el código.</p>
+                      <div className="codigo-reserva">
+                        <span>{it.codigo}</span>
+                        <BotonCopiar texto={it.codigo} />
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <span>{dinero(it.total)}</span>

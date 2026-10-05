@@ -6,6 +6,8 @@ import { precioTexto } from '../ciudades';
 import { useAuth } from '../auth';
 import EstadoReserva from '../components/EstadoReserva';
 import BotonCopiar from '../components/BotonCopiar';
+import CodigoQR from '../components/CodigoQR';
+import { codigoCorto, urlVerificacion } from '../reservas';
 import { EstadoError, EstadoVacio, MensajeError } from '../components/Estados';
 
 const POR_PAGINA = 6;
@@ -88,6 +90,8 @@ export default function MisReservas() {
           {reservas.map((r) => (
             <li key={r.reservation_id} className="pase">
               <div className="pase-cuerpo">
+                <p className="codigo-corto-etiqueta">Código de reserva</p>
+                <p className="codigo-corto">{codigoCorto(r.reservation_id)}</p>
                 <dl className="pase-datos">
                   <div>
                     <dt>Estado</dt>
@@ -104,6 +108,12 @@ export default function MisReservas() {
                     <dd>{precioTexto(r.total_price)}</dd>
                   </div>
                 </dl>
+                {r.status !== 'CANCELLED' && (
+                  <details className="ver-qr">
+                    <summary>Mostrar QR de la entrada</summary>
+                    <CodigoQR valor={urlVerificacion(r.reservation_id)} etiqueta={`Código QR de la reserva ${codigoCorto(r.reservation_id)}`} tamano={160} />
+                  </details>
+                )}
                 <div className="codigo-reserva">
                   <span>{r.reservation_id}</span>
                   <BotonCopiar texto={r.reservation_id} />

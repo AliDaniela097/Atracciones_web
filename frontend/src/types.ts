@@ -100,3 +100,61 @@ export interface TokenResponse {
   scope: string;
   user: Usuario;
 }
+
+// ---------- Reporte de ventas del operador (GET /reportes/ventas, endpoint interno) ----------
+export interface ReporteVentas {
+  moneda: string;
+  periodo: { desde: string; hasta: string };
+  generadoEn: string;
+  resumen: {
+    reservas: number;
+    confirmadas: number;
+    canceladas: number;
+    entradasVendidas: number;
+    ingresos: number;
+    montoCancelado: number;
+    ticketPromedio: number;
+    clientes: number;
+  };
+  porAtraccion: { id: string; nombre: string; ciudadId: number | null; reservas: number; entradas: number; ingresos: number; canceladas: number }[];
+  porAeropuerto: { ciudadId: number; nombre: string; iata: string; reservas: number; entradas: number; ingresos: number }[];
+  porDia: { fecha: string; reservas: number; entradas: number; ingresos: number }[];
+  ultimas: {
+    id: string;
+    fechaCompra: string;
+    fechaVisita: string;
+    hora: string | null;
+    atraccion: string;
+    entradas: number;
+    total: number;
+    moneda: string;
+    estado: 'CONFIRMED' | 'PENDING' | 'CANCELLED';
+    cliente: string;
+    email: string | null;
+  }[];
+}
+
+/** GET /auth/proveedores: inicios de sesión sociales configurados en el servidor */
+export interface ProveedoresSociales {
+  google: { clientId: string } | null;
+  facebook: { appId: string } | null;
+}
+
+/** GET /reportes/reservas/{codigo}: verificación de una entrada (operador) */
+export interface VerificacionReserva {
+  id: string;
+  estado: 'CONFIRMED' | 'PENDING' | 'CANCELLED';
+  entradas: number;
+  total: number;
+  moneda: string;
+  fechaVisita: string;
+  hora: string | null;
+  fechaCompra: string;
+  cliente: string;
+  motivoCancelacion: string | null;
+  atraccionId: string;
+  atraccion: string;
+  ciudadId: number | null;
+  valida: boolean;
+  vencida: boolean;
+}

@@ -1,7 +1,6 @@
 import type {
   Atraccion, AtraccionInput, Availability, PaginatedAtracciones, ProblemDetails,
-  Reservation, ReservationRequest, SearchResponse, TokenResponse,
-} from './types';
+  Reservation, ReservationRequest, SearchResponse, TokenResponse, ReporteVentas, ProveedoresSociales, VerificacionReserva } from './types';
 
 const API = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1';
 
@@ -64,6 +63,14 @@ export const api = {
   registro: (name: string, email: string, password: string) =>
     request<TokenResponse>('/auth/registro', { method: 'POST', body: JSON.stringify({ name, email, password }) }),
 
+  proveedores: () => request<ProveedoresSociales>('/auth/proveedores'),
+
+  conGoogle: (credential: string) =>
+    request<TokenResponse>('/auth/google', { method: 'POST', body: JSON.stringify({ credential }) }),
+
+  conFacebook: (accessToken: string) =>
+    request<TokenResponse>('/auth/facebook', { method: 'POST', body: JSON.stringify({ accessToken }) }),
+
   // ---------- Catálogo ----------
   listar: (limit = 12, offset = 0) =>
     request<PaginatedAtracciones>(`/atracciones?limit=${limit}&offset=${offset}`),
@@ -84,6 +91,13 @@ export const api = {
     }),
 
   obtener: (id: string) => request<Atraccion>(`/atracciones/${id}`),
+
+  // ---------- Reportes del operador (endpoint interno, scope attractions:write) ----------
+  verificarReserva: (codigo: string) =>
+    request<VerificacionReserva>(`/reportes/reservas/${encodeURIComponent(codigo.trim())}`),
+
+  reporteVentas: (desde: string, hasta: string) =>
+    request<ReporteVentas>(`/reportes/ventas?desde=${encodeURIComponent(desde)}&hasta=${encodeURIComponent(hasta)}`),
 
   crear: (data: AtraccionInput) =>
     request<Atraccion>('/atracciones', { method: 'POST', body: JSON.stringify(data) }),

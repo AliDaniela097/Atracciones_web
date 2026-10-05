@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, fechaMasDias } from '../api';
+import { useAuth } from '../auth';
 import type { Atraccion, Availability } from '../types';
 import { ciudadDe, formatoDuracion, nombreIdioma, precioTexto, TIPOS_PRODUCTO } from '../ciudades';
 import MediaAtraccion from './MediaAtraccion';
@@ -10,6 +11,7 @@ import MediaAtraccion from './MediaAtraccion';
  * Consulta los cupos de mañana con GET /atracciones/{id}/availability.
  */
 export default function PanelAtraccion({ a }: { a: Atraccion | null }) {
+  const { esOperador } = useAuth();
   const [disp, setDisp] = useState<Availability | null>(null);
   const [cargandoDisp, setCargandoDisp] = useState(false);
   const manana = fechaMasDias(1);
@@ -90,7 +92,7 @@ export default function PanelAtraccion({ a }: { a: Atraccion | null }) {
           )}
         </p>
         <Link to={`/atraccion/${a.id}`} className="btn btn--bloque">
-          Comprar entradas
+          {esOperador ? 'Ver detalle' : 'Comprar entradas'}
         </Link>
       </div>
     </div>

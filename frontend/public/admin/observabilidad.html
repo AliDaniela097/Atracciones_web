@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <meta name="theme-color" content="#0f1513" />
+    <title>Observabilidad · Panel del operador · Atracciones Ecuador</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="stylesheet" href="/admin/observabilidad.css" />
+    <!-- Instrumentación: se carga primero para registrar también errores de esta página -->
+    <script src="/admin/script.js"></script>
+  </head>
+  <body data-observability-ignore>
+    <a class="saltar" href="#contenido">Saltar al contenido</a>
+
+    <header class="cabecera">
+      <a class="volver" href="/admin">Volver al panel del operador</a>
+      <div>
+        <h1>Observabilidad</h1>
+        <p class="subtitulo">
+          Registro local de este navegador: rendimiento, errores, clics, visibilidad de la pestaña y entorno.
+          Los datos se guardan en <code>localStorage</code> con el prefijo <code>atracciones-observability:</code>.
+        </p>
+      </div>
+    </header>
+
+    <main id="contenido" tabindex="-1">
+      <!-- Se muestra si quien abre la página no inició sesión como operador -->
+      <section id="sin-acceso" class="aviso" hidden aria-labelledby="titulo-sin-acceso">
+        <h2 id="titulo-sin-acceso">Esta página es solo para el operador</h2>
+        <p>Inicia sesión con la cuenta del operador y vuelve a abrir “Observabilidad” desde el panel.</p>
+        <p><a class="boton" href="/ingresar">Ingresar</a></p>
+      </section>
+
+      <div id="tablero" hidden>
+        <section class="barra" aria-label="Acciones del registro">
+          <button type="button" class="boton" id="btn-actualizar">Actualizar</button>
+          <button type="button" class="boton boton--suave" id="btn-auto" aria-pressed="true">Actualización automática</button>
+          <button type="button" class="boton boton--suave" id="btn-demo">Generar eventos de prueba</button>
+          <button type="button" class="boton boton--suave" id="btn-exportar">Exportar JSON</button>
+          <button type="button" class="boton boton--peligro" id="btn-limpiar">Limpiar registro</button>
+        </section>
+
+        <p id="estado" class="estado" role="status" aria-live="polite">Cargando registro…</p>
+        <p id="aviso-api" class="nota" hidden></p>
+
+        <section aria-labelledby="titulo-resumen">
+          <h2 id="titulo-resumen" class="sr-only">Resumen</h2>
+          <div class="kpis" id="kpis" aria-busy="true">
+            <div class="kpi"><p class="kpi-valor" id="k-eventos">–</p><p class="kpi-texto">eventos registrados</p></div>
+            <div class="kpi"><p class="kpi-valor" id="k-errores">–</p><p class="kpi-texto">errores (JS, promesas y recursos)</p></div>
+            <div class="kpi"><p class="kpi-valor" id="k-clics">–</p><p class="kpi-texto">clics e interacciones</p></div>
+            <div class="kpi"><p class="kpi-valor" id="k-vistas">–</p><p class="kpi-texto">páginas y vistas abiertas</p></div>
+            <div class="kpi"><p class="kpi-valor" id="k-visibilidad">–</p><p class="kpi-texto">cambios de pestaña</p></div>
+            <div class="kpi"><p class="kpi-valor" id="k-carga">–</p><p class="kpi-texto">última carga completa</p></div>
+          </div>
+        </section>
+
+        <div class="columnas">
+          <section class="panel" aria-labelledby="titulo-rendimiento">
+            <h2 id="titulo-rendimiento">Rendimiento de la última carga</h2>
+            <dl class="datos" id="rendimiento"></dl>
+          </section>
+
+          <section class="panel" aria-labelledby="titulo-entorno">
+            <h2 id="titulo-entorno">Entorno del navegador</h2>
+            <dl class="datos" id="entorno"></dl>
+            <h3>APIs disponibles</h3>
+            <ul class="apis" id="apis"></ul>
+          </section>
+        </div>
+
+        <section class="panel" aria-labelledby="titulo-tipos">
+          <h2 id="titulo-tipos">Eventos por tipo</h2>
+          <p class="nota">Toca una barra para ver el detalle de esos eventos en el registro.</p>
+          <ul class="barras" id="por-tipo"></ul>
+        </section>
+
+        <section class="panel" aria-labelledby="titulo-registro">
+          <div class="encabezado-panel">
+            <h2 id="titulo-registro">Registro de eventos</h2>
+            <label class="campo-filtro">
+              Tipo
+              <select id="filtro"></select>
+            </label>
+          </div>
+          <div class="tabla-contenedor" tabindex="0" role="region" aria-labelledby="titulo-registro">
+            <table class="tabla">
+              <caption class="sr-only" id="caption-registro">Eventos más recientes primero</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Hora</th>
+                  <th scope="col">Tipo</th>
+                  <th scope="col">Página</th>
+                  <th scope="col">Detalle</th>
+                </tr>
+              </thead>
+              <tbody id="registro"></tbody>
+            </table>
+          </div>
+          <p class="nota" id="nota-registro"></p>
+        </section>
+
+        <section class="panel" id="panel-respaldo" hidden aria-labelledby="titulo-respaldo">
+          <h2 id="titulo-respaldo">Snapshot en JSON</h2>
+          <p class="nota">Tu navegador no permite descargar archivos desde aquí. Copia el contenido y guárdalo como <code>.json</code>.</p>
+          <label class="sr-only" for="json-respaldo">Snapshot en JSON</label>
+          <textarea id="json-respaldo" rows="12" readonly></textarea>
+        </section>
+      </div>
+    </main>
+
+    <dialog id="dialogo-limpiar" aria-labelledby="titulo-dialogo">
+      <form method="dialog">
+        <h2 id="titulo-dialogo">¿Limpiar el registro?</h2>
+        <p>Se borran todos los eventos y métricas guardados en este navegador. No se puede deshacer.</p>
+        <div class="dialogo-acciones">
+          <button value="cancelar" class="boton boton--suave">Cancelar</button>
+          <button value="limpiar" class="boton boton--peligro">Limpiar registro</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="/admin/observabilidad.js"></script>
+  </body>
+</html>

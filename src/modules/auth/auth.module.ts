@@ -7,6 +7,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { AutenticacionGuard } from './guards/autenticacion.guard';
 import { OperadorSeed } from './seeds/operador.seed';
+import { ClienteDemoSeed } from './seeds/cliente-demo.seed';
 
 @Module({
   imports: [
@@ -27,7 +28,7 @@ import { OperadorSeed } from './seeds/operador.seed';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, AutenticacionGuard, OperadorSeed],
+  providers: [AuthService, AutenticacionGuard, OperadorSeed, ClienteDemoSeed],
   exports: [JwtModule, AutenticacionGuard],
 })
 export class AuthModule {}

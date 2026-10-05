@@ -22,9 +22,14 @@ export class OperadorSeed implements OnApplicationBootstrap {
       this.logger.warn('No hay operador configurado: agrega OPERADOR_EMAIL y OPERADOR_PASSWORD en el .env');
       return;
     }
+    // En producción la clave del operador debe ser fuerte. En desarrollo (local) se permite una corta para pruebas.
+    const enProduccion = this.config.get<string>('NODE_ENV') === 'production';
     if (clave.length < 8) {
-      this.logger.warn('OPERADOR_PASSWORD debe tener al menos 8 caracteres; no se creó el operador');
-      return;
+      if (enProduccion) {
+        this.logger.error('OPERADOR_PASSWORD debe tener al menos 8 caracteres en producción; no se creó el operador');
+        return;
+      }
+      this.logger.warn('OPERADOR_PASSWORD es corta: se acepta solo porque NODE_ENV no es production. No la uses en el servidor real.');
     }
     const creado = await this.auth.asegurarOperador(this.config.get('OPERADOR_NOMBRE') ?? 'Operador', email, clave);
     this.logger.log(creado ? `Operador creado: ${email}` : `Operador listo: ${email}`);

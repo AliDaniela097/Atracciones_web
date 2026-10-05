@@ -6,12 +6,14 @@ import { ciudadDe, coordenadasTexto, formatoDuracion, nombreIdioma, precioTexto,
 import MediaAtraccion from '../components/MediaAtraccion';
 import Icono from '../components/Icono';
 import { EstadoError, MensajeError } from '../components/Estados';
-import { dinero, MAX_ENTRADAS_POR_LINEA, useCarrito } from '../carrito';
+import { dinero, fechaLarga, MAX_ENTRADAS_POR_LINEA, useCarrito } from '../carrito';
+import { useAuth } from '../auth';
 
 export default function Detalle() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const { agregar, enCarrito, cantidadTotal } = useCarrito();
+  const { esOperador } = useAuth();
   const [a, setA] = useState<Atraccion | null>(null);
   const [error, setError] = useState('');
   const [intento, setIntento] = useState(0);
@@ -138,7 +140,13 @@ export default function Detalle() {
           <MediaAtraccion a={a} />
         </div>
         {a.photos.slice(1, 3).map((p, i) => (
-          <img key={p.url} src={p.url} alt={`Foto ${i + 2} de ${a.name}`} loading="lazy" />
+          <img
+            key={p.url}
+            src={p.url}
+            alt={`Foto ${i + 2} de ${a.name}`}
+            loading="lazy"
+            onError={(e) => e.currentTarget.classList.add('foto-fallida')}
+          />
         ))}
       </div>
 
@@ -171,7 +179,7 @@ export default function Detalle() {
           </p>
         </article>
 
-        <aside className="pase" aria-label="Comprar entradas">
+        <aside className="pase" aria-label={esOperador ? 'Información para el operador' : 'Comprar entradas'}>
           <div className="pase-cuerpo">
             <p className="pase-ruta">
               <span className="codigo-iata">{ciudad?.iata ?? 'EC'}</span>
@@ -185,78 +193,99 @@ export default function Detalle() {
 
           <div className="pase-corte" aria-hidden="true" />
 
-          <div className="pase-pie">
-            <form onSubmit={agregarAlCarrito(false)} className="formulario">
-              <label className="campo">
-                Fecha de la visita
-                <input type="date" value={fecha} min={fechaMasDias(0)} onChange={(e) => setFecha(e.target.value)} required />
-              </label>
-              <p className="pase-cupos" aria-live="polite">
-                {cargandoDisp ? (
-                  'Consultando cupos…'
-                ) : disp ? (
-                  libres === 0 ? (
-                    yaEnCarrito > 0 ? 'Ya tienes en tu carrito todos los cupos de esta fecha.' : 'No quedan cupos para esta fecha. Prueba con otro día.'
-                  ) : (
-                    <>
-                      <strong>{libres}</strong> cupos disponibles
-                      {yaEnCarrito > 0 && ` (tienes ${yaEnCarrito} en tu carrito)`}
-                    </>
-                  )
-                ) : (
-                  'No se pudo consultar los cupos para esta fecha.'
-                )}
+          {esOperador ? (
+            <div className="pase-pie">
+              <p className="nota">
+                Estás en modo operador. El operador administra el catálogo y no compra entradas; las compras las hacen los
+                clientes.
               </p>
-
-              {disp && disp.times.length > 0 && (
-                <label className="campo">
-                  Horario
-                  <select value={hora} onChange={(e) => setHora(e.target.value)}>
-                    {disp.times.map((t) => (
-                      <option key={t}>{t}</option>
-                    ))}
-                  </select>
-                </label>
-              )}
-
-              <label className="campo">
-                Número de entradas
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  min={1}
-                  max={maximo}
-                  value={cantidad}
-                  onChange={(e) => setCantidad(Number(e.target.value))}
-                  required
-                />
-              </label>
-
-              <p className="resumen-total">
-                Subtotal
-                <strong>{dinero(a.price.total * cantidad)}</strong>
-              </p>
-              {errorCarrito && <MensajeError>{errorCarrito}</MensajeError>}
-              {aviso && (
-                <p className="aviso-ok" role="status">
-                  <Icono nombre="check" tamano={18} />
-                  {aviso} <Link to="/carrito">Ver carrito ({cantidadTotal})</Link>
+              {disp && (
+                <p className="pase-cupos">
+                  <strong>{disp.available_spots}</strong> cupos libres el {fechaLarga(fecha)}
                 </p>
               )}
-              <button className="btn btn--bloque" disabled={cargandoDisp || !disp || libres === 0}>
-                <Icono nombre="carrito" tamano={18} />
-                Agregar al carrito
-              </button>
-              <button
-                type="button"
-                className="btn btn--suave btn--bloque"
-                disabled={cargandoDisp || !disp || libres === 0}
-                onClick={() => agregarAlCarrito(true)()}
-              >
-                Comprar ahora
-              </button>
-            </form>
-          </div>
+              <Link to={`/admin/editar/${a.id}`} className="btn btn--bloque">
+                <Icono nombre="editar" tamano={18} />
+                Editar esta atracción
+              </Link>
+              <Link to="/admin" className="btn btn--suave btn--bloque">
+                Volver al panel
+              </Link>
+            </div>
+          ) : (
+            <div className="pase-pie">
+              <form onSubmit={agregarAlCarrito(false)} className="formulario">
+                <label className="campo">
+                  Fecha de la visita
+                  <input type="date" value={fecha} min={fechaMasDias(0)} onChange={(e) => setFecha(e.target.value)} required />
+                </label>
+                <p className="pase-cupos" aria-live="polite">
+                  {cargandoDisp ? (
+                    'Consultando cupos…'
+                  ) : disp ? (
+                    libres === 0 ? (
+                      yaEnCarrito > 0 ? 'Ya tienes en tu carrito todos los cupos de esta fecha.' : 'No quedan cupos para esta fecha. Prueba con otro día.'
+                    ) : (
+                      <>
+                        <strong>{libres}</strong> cupos disponibles
+                        {yaEnCarrito > 0 && ` (tienes ${yaEnCarrito} en tu carrito)`}
+                      </>
+                    )
+                  ) : (
+                    'No se pudo consultar los cupos para esta fecha.'
+                  )}
+                </p>
+
+                {disp && disp.times.length > 0 && (
+                  <label className="campo">
+                    Horario
+                    <select value={hora} onChange={(e) => setHora(e.target.value)}>
+                      {disp.times.map((t) => (
+                        <option key={t}>{t}</option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+
+                <label className="campo">
+                  Número de entradas
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    max={maximo}
+                    value={cantidad}
+                    onChange={(e) => setCantidad(Number(e.target.value))}
+                    required
+                  />
+                </label>
+
+                <p className="resumen-total">
+                  Subtotal
+                  <strong>{dinero(a.price.total * cantidad)}</strong>
+                </p>
+                {errorCarrito && <MensajeError>{errorCarrito}</MensajeError>}
+                {aviso && (
+                  <p className="aviso-ok" role="status">
+                    <Icono nombre="check" tamano={18} />
+                    {aviso} <Link to="/carrito">Ver carrito ({cantidadTotal})</Link>
+                  </p>
+                )}
+                <button className="btn btn--bloque" disabled={cargandoDisp || !disp || libres === 0}>
+                  <Icono nombre="carrito" tamano={18} />
+                  Agregar al carrito
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--suave btn--bloque"
+                  disabled={cargandoDisp || !disp || libres === 0}
+                  onClick={() => agregarAlCarrito(true)()}
+                >
+                  Comprar ahora
+                </button>
+              </form>
+            </div>
+          )}
         </aside>
       </div>
     </>

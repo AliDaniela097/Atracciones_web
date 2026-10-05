@@ -19,9 +19,14 @@ export const SCOPES = {
 
 export type Scope = (typeof SCOPES)[keyof typeof SCOPES];
 
+/**
+ * El CLIENTE compra (book) y cancela lo suyo.
+ * El OPERADOR administra: lee, escribe el catálogo y puede cancelar reservas, pero NO compra
+ * (no tiene attractions:book). Así una cuenta administrativa nunca genera ventas.
+ */
 export const SCOPES_POR_ROL: Record<Rol, Scope[]> = {
   [Rol.CLIENTE]: [SCOPES.LEER, SCOPES.RESERVAR, SCOPES.CANCELAR],
-  [Rol.OPERADOR]: [SCOPES.LEER, SCOPES.RESERVAR, SCOPES.CANCELAR, SCOPES.ESCRIBIR],
+  [Rol.OPERADOR]: [SCOPES.LEER, SCOPES.CANCELAR, SCOPES.ESCRIBIR],
 };
 
 /** Datos del usuario que viajan dentro del token y llegan a los controladores */

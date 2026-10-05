@@ -10,9 +10,12 @@ import { Ingresar, Registro } from './pages/Cuenta';
 import AdminAtracciones from './pages/admin/AdminAtracciones';
 import AtraccionForm from './pages/admin/AtraccionForm';
 import AdminReservas from './pages/admin/AdminReservas';
+import AdminReportes from './pages/admin/AdminReportes';
+import VerificarReserva from './pages/admin/VerificarReserva';
 import { LayoutCliente, LayoutOperador } from './components/Layouts';
 import { EstadoVacio } from './components/Estados';
 import { RutaProtegida } from './auth';
+import SoloClientes from './components/SoloClientes';
 
 /**
  * Dos vistas separadas:
@@ -28,12 +31,21 @@ export default function App() {
         <Route path="/atraccion/:id" element={<Detalle />} />
         <Route path="/ingresar" element={<Ingresar />} />
         <Route path="/registro" element={<Registro />} />
-        <Route path="/carrito" element={<Carrito />} />
+        <Route
+          path="/carrito"
+          element={
+            <SoloClientes>
+              <Carrito />
+            </SoloClientes>
+          }
+        />
         <Route
           path="/checkout"
           element={
             <RutaProtegida>
-              <Checkout />
+              <SoloClientes>
+                <Checkout />
+              </SoloClientes>
             </RutaProtegida>
           }
         />
@@ -41,7 +53,9 @@ export default function App() {
           path="/compra/confirmada"
           element={
             <RutaProtegida>
-              <Comprobante />
+              <SoloClientes>
+                <Comprobante />
+              </SoloClientes>
             </RutaProtegida>
           }
         />
@@ -49,7 +63,9 @@ export default function App() {
           path="/mis-reservas"
           element={
             <RutaProtegida>
-              <MisReservas />
+              <SoloClientes>
+                <MisReservas />
+              </SoloClientes>
             </RutaProtegida>
           }
         />
@@ -88,6 +104,9 @@ export default function App() {
         <Route path="nueva" element={<AtraccionForm />} />
         <Route path="editar/:id" element={<AtraccionForm />} />
         <Route path="reservas" element={<AdminReservas />} />
+        <Route path="reportes" element={<AdminReportes />} />
+        <Route path="verificar" element={<VerificarReserva />} />
+        <Route path="verificar/:codigo" element={<VerificarReserva />} />
       </Route>
     </Routes>
   );

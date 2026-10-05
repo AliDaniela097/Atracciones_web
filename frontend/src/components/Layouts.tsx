@@ -9,6 +9,8 @@ interface Seccion {
   texto: string;
   icono: NombreIcono;
   exacta?: boolean;
+  /** Página HTML independiente (fuera de React): se abre con recarga completa */
+  externa?: boolean;
 }
 
 /** Logotipo: un sol dorado cruzado por la línea ecuatorial (Ecuador = latitud 0) */
@@ -32,12 +34,19 @@ function Marca({ destino, conNombre = false }: { destino: string; conNombre?: bo
 function Navegacion({ secciones, clase, etiqueta }: { secciones: Seccion[]; clase: string; etiqueta: string }) {
   return (
     <nav className={clase} aria-label={etiqueta}>
-      {secciones.map((s) => (
-        <NavLink key={s.ruta} to={s.ruta} end={s.exacta} className="nav-item">
-          <Icono nombre={s.icono} tamano={22} />
-          <span>{s.texto}</span>
-        </NavLink>
-      ))}
+      {secciones.map((s) =>
+        s.externa ? (
+          <a key={s.ruta} href={s.ruta} className="nav-item">
+            <Icono nombre={s.icono} tamano={22} />
+            <span>{s.texto}</span>
+          </a>
+        ) : (
+          <NavLink key={s.ruta} to={s.ruta} end={s.exacta} className="nav-item">
+            <Icono nombre={s.icono} tamano={22} />
+            <span>{s.texto}</span>
+          </NavLink>
+        ),
+      )}
     </nav>
   );
 }
@@ -45,6 +54,8 @@ function Navegacion({ secciones, clase, etiqueta }: { secciones: Seccion[]; clas
 /** Botón del carrito con la cantidad de entradas */
 function BotonCarrito() {
   const { cantidadTotal } = useCarrito();
+  const { esOperador } = useAuth();
+  if (esOperador) return null; // el operador no compra
   return (
     <NavLink
       to="/carrito"
@@ -95,10 +106,12 @@ function MenuCuenta() {
             Panel del operador
           </Link>
         )}
-        <Link to="/mis-reservas" className="btn-texto">
-          <Icono nombre="ticket" tamano={18} />
-          Mis reservas
-        </Link>
+        {!esOperador && (
+          <Link to="/mis-reservas" className="btn-texto">
+            <Icono nombre="ticket" tamano={18} />
+            Mis reservas
+          </Link>
+        )}
         <button
           type="button"
           className="btn-texto btn-texto--peligro"
@@ -123,6 +136,9 @@ const SECCIONES_CLIENTE: Seccion[] = [
 
 /** Vista del turista: catálogo público, reserva con cuenta de cliente */
 export function LayoutCliente() {
+  const { esOperador } = useAuth();
+  // El operador puede mirar el sitio público, pero sin la sección de compras
+  const secciones = esOperador ? SECCIONES_CLIENTE.filter((s) => s.ruta !== '/mis-reservas') : SECCIONES_CLIENTE;
   return (
     <div className="app app--cliente">
       <a href="#contenido" className="saltar">
@@ -133,7 +149,7 @@ export function LayoutCliente() {
         <header className="superior superior--cliente">
           <Marca destino="/" conNombre />
           <nav className="nav-superior" aria-label="Navegación principal">
-            {SECCIONES_CLIENTE.map((s) => (
+            {secciones.map((s) => (
               <NavLink key={s.ruta} to={s.ruta} end={s.exacta}>
                 {s.texto}
               </NavLink>
@@ -143,6 +159,12 @@ export function LayoutCliente() {
           <BotonCarrito />
           <MenuCuenta />
         </header>
+        {esOperador && (
+          <p className="aviso-operador" role="note">
+            Estás viendo el sitio como operador: puedes revisar el catálogo, pero las compras son solo para clientes.{' '}
+            <Link to="/admin">Volver al panel</Link>
+          </p>
+        )}
         <main id="contenido" tabIndex={-1}>
           <Outlet />
         </main>
@@ -162,7 +184,7 @@ export function LayoutCliente() {
         </footer>
       </div>
 
-      <Navegacion secciones={SECCIONES_CLIENTE} clase="nav-inferior" etiqueta="Navegación principal" />
+      <Navegacion secciones={secciones} clase="nav-inferior" etiqueta="Navegación principal" />
     </div>
   );
 }
@@ -170,6 +192,9 @@ export function LayoutCliente() {
 const SECCIONES_OPERADOR: Seccion[] = [
   { ruta: '/admin', texto: 'Atracciones', icono: 'panel', exacta: true },
   { ruta: '/admin/reservas', texto: 'Reservas', icono: 'historial' },
+  { ruta: '/admin/reportes', texto: 'Reportes', icono: 'reporte' },
+  { ruta: '/admin/verificar', texto: 'Verificar', icono: 'qr' },
+  { ruta: '/admin/observabilidad.html', texto: 'Observa­bilidad', icono: 'pulso', externa: true },
   { ruta: '/', texto: 'Ver sitio', icono: 'sitio', exacta: true },
 ];
 

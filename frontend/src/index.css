@@ -2709,3 +2709,414 @@ h3 {
     flex-wrap: nowrap;
   }
 }
+
+/* ---------- Reportes de ventas (operador) ---------- */
+
+.reporte-cuerpo {
+  display: grid;
+  gap: 20px;
+}
+
+.reporte-cuerpo .resumen-operador {
+  margin-bottom: 0;
+}
+
+.filtros-reporte {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 16px;
+  margin-bottom: 20px;
+}
+
+.filtros-reporte .chips {
+  flex-basis: 100%;
+}
+
+.filtros-reporte .campo {
+  min-width: 160px;
+}
+
+.reporte-bloque h2 {
+  font-size: 1.35rem;
+  margin-bottom: 14px;
+}
+
+.columnas-dia {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 180px;
+  padding-bottom: 1px;
+  border-bottom: 1px solid var(--linea);
+}
+
+.columna-dia {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+
+.columna-relleno {
+  display: block;
+  width: 100%;
+  background: var(--oro);
+  border-radius: 3px 3px 0 0;
+}
+
+.eje-dia {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+  color: var(--suave);
+  font-size: 0.82rem;
+}
+
+.detalle-tabla {
+  margin-top: 14px;
+}
+
+.detalle-tabla summary {
+  cursor: pointer;
+  color: var(--acento);
+  font-weight: 600;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+}
+
+.reporte-columnas {
+  display: grid;
+  gap: 20px;
+}
+
+@media (min-width: 1000px) {
+  .reporte-columnas {
+    grid-template-columns: 3fr 2fr;
+  }
+}
+
+.ranking {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+}
+
+.ranking li {
+  display: grid;
+  gap: 4px;
+}
+
+.ranking-fila {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ranking-fila strong {
+  color: var(--oro);
+  font-variant-numeric: tabular-nums;
+}
+
+.ranking-barra {
+  display: block;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--elevada);
+  overflow: hidden;
+}
+
+.ranking-barra span {
+  display: block;
+  height: 100%;
+  background: var(--oro);
+  border-radius: 999px;
+}
+
+.ranking .nota {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+@media print {
+  .filtros-reporte,
+  .encabezado-pagina .acciones,
+  .detalle-tabla summary {
+    display: none !important;
+  }
+
+  .detalle-tabla:not([open]) > :not(summary) {
+    display: block;
+  }
+}
+
+/* ---------- Ingreso con Google y Facebook ---------- */
+
+.sociales {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.separador-o {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  color: var(--suave);
+  font-size: 0.88rem;
+}
+
+.separador-o::before,
+.separador-o::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--linea);
+}
+
+.boton-google {
+  display: flex;
+  justify-content: center;
+  min-height: 44px;
+}
+
+.btn--facebook {
+  background: #1877f2;
+  color: #fff;
+}
+
+.btn--facebook:hover {
+  background: #166fe5;
+}
+
+.sociales-nota {
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+/* Estados de reserva: conservan su color propio sobre el estilo dorado de .pastilla */
+.pastilla.pastilla--ok {
+  background: var(--ok-fondo);
+  color: var(--ok);
+}
+
+.pastilla.pastilla--pendiente {
+  background: var(--aviso-fondo);
+  color: var(--aviso);
+}
+
+.pastilla.pastilla--cancelada {
+  background: var(--peligro-fondo);
+  color: var(--peligro);
+}
+
+/* ---------- Código de reserva con QR ---------- */
+
+.entrada-qr {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.codigo-qr {
+  flex: none;
+  display: block;
+  border-radius: 8px;
+}
+
+.entrada-qr-texto {
+  flex: 1;
+  min-width: 200px;
+}
+
+.entrada-qr-texto .nota {
+  margin: 4px 0 8px;
+  font-size: 0.85rem;
+}
+
+.codigo-corto-etiqueta {
+  margin: 0;
+  color: var(--suave);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.codigo-corto {
+  margin: 0;
+  font-family: var(--fuente-titulo);
+  font-size: 1.9rem;
+  line-height: 1.15;
+  color: var(--oro);
+  font-variant-numeric: lining-nums;
+}
+
+.ver-qr {
+  margin: 12px 0;
+}
+
+.ver-qr summary {
+  cursor: pointer;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  color: var(--acento);
+  font-weight: 600;
+}
+
+.ver-qr .codigo-qr {
+  margin-top: 8px;
+}
+
+/* ---------- Verificar entrada (operador) ---------- */
+
+.verificar .fila-busqueda {
+  max-width: 520px;
+  margin-bottom: 20px;
+}
+
+.veredicto {
+  max-width: 720px;
+  border-width: 2px;
+}
+
+.veredicto-cabecera {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.veredicto-cabecera h2 {
+  margin: 0;
+  font-size: 1.9rem;
+}
+
+.veredicto-cabecera p {
+  margin: 4px 0 0;
+}
+
+.veredicto--si {
+  border-color: var(--ok);
+}
+
+.veredicto--si .veredicto-cabecera {
+  color: var(--ok);
+}
+
+.veredicto--no {
+  border-color: var(--peligro);
+}
+
+.veredicto--no .veredicto-cabecera {
+  color: var(--peligro);
+}
+
+.veredicto--aviso {
+  border-color: var(--aviso);
+}
+
+.veredicto--aviso .veredicto-cabecera {
+  color: var(--aviso);
+}
+
+.veredicto-datos dd {
+  overflow-wrap: anywhere;
+}
+
+/* Al imprimir el comprobante el QR sale nítido y en negro sobre blanco */
+@media print {
+  .codigo-qr {
+    width: 120px;
+    height: 120px;
+  }
+
+  .codigo-corto {
+    color: #000;
+  }
+}
+
+/* ---------- Impresión / PDF: papel blanco y texto oscuro (los navegadores no imprimen fondos) ---------- */
+@media print {
+  :root {
+    --fondo: #ffffff;
+    --superficie: #ffffff;
+    --elevada: #f2f2f2;
+    --linea: #c8c8c8;
+    --texto: #111111;
+    --suave: #444444;
+    --oro: #7a5a14;
+    --acento: #7a5a14;
+    --ok: #146c43;
+    --ok-fondo: #e6f4ec;
+    --peligro: #a8322a;
+    --peligro-fondo: #f9e6e4;
+    color-scheme: light;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #111111;
+  }
+
+  .pie,
+  .volver {
+    display: none !important;
+  }
+
+  .pase,
+  .tarjeta {
+    border: 1px solid #c8c8c8;
+    break-inside: avoid;
+  }
+
+  .codigo-reserva {
+    background: #ffffff;
+  }
+
+  .codigo-corto {
+    color: #111111;
+  }
+
+  .codigo-reserva .btn-texto {
+    display: none;
+  }
+}
+
+/* ---------- Barra inferior del operador en celular: 6 opciones caben sin cortarse ---------- */
+.nav-inferior {
+  grid-auto-columns: minmax(0, 1fr);
+}
+
+.app--operador .nav-inferior .nav-item {
+  padding: 6px 0;
+  font-size: 0.62rem;
+  letter-spacing: -0.01em;
+}
+
+/* Aviso cuando el operador mira el sitio público */
+.aviso-operador {
+  margin: 0;
+  padding: 10px 16px;
+  background: rgb(217 173 82 / 0.12);
+  border-bottom: 1px solid rgb(217 173 82 / 0.35);
+  color: var(--texto);
+  font-size: 0.9rem;
+}
+
+@media (min-width: 768px) {
+  .aviso-operador {
+    padding: 10px 28px;
+  }
+}
+
+/* Foto que no cargó: se muestra como un bloque vacío en vez del ícono roto */
+img.foto-fallida {
+  visibility: hidden;
+}

@@ -53,3 +53,19 @@ export class TokenResponseDto {
   @ApiProperty({ example: 'attractions:read attractions:book attractions:cancel' }) scope: string;
   @ApiProperty({ type: UsuarioDto }) user: UsuarioDto;
 }
+
+export class GoogleLoginDto {
+  @ApiProperty({ description: 'ID token (JWT) que entrega Google Identity Services en el navegador' })
+  @IsString()
+  @MinLength(20)
+  @MaxLength(4096)
+  credential: string;
+}
+
+export class FacebookLoginDto {
+  @ApiProperty({ description: 'Access token que entrega el SDK de Facebook en el navegador' })
+  @IsString()
+  @MinLength(20)
+  @MaxLength(4096)
+  accessToken: string;
+}

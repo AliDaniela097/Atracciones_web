@@ -12,6 +12,8 @@ import { Reserva } from './entities/reserva.entity';
 import { ClaveIdempotencia } from './entities/clave-idempotencia.entity';
 import { CiudadesSeed } from './seeds/ciudades.seed';
 import { AtraccionesSeed } from './seeds/atracciones.seed';
+import { ReportesController } from './reportes/reportes.controller';
+import { ReportesService } from './reportes/reportes.service';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
@@ -28,7 +30,7 @@ import { AuthModule } from '../auth/auth.module';
       ClaveIdempotencia,
     ]),
   ],
-  controllers: [AtraccionesController],
-  providers: [AtraccionesService, CiudadesSeed, AtraccionesSeed],
+  controllers: [AtraccionesController, ReportesController],
+  providers: [AtraccionesService, CiudadesSeed, AtraccionesSeed, ReportesService],
 })
 export class AtraccionesModule {}

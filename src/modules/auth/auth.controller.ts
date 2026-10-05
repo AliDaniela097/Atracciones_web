@@ -2,7 +2,7 @@ import { Body, Controller, Get, HttpCode, HttpStatus, Post } from '@nestjs/commo
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
-import { LoginDto, RegistroDto, TokenResponseDto, UsuarioDto } from './dto/auth.dto';
+import { FacebookLoginDto, GoogleLoginDto, LoginDto, RegistroDto, TokenResponseDto, UsuarioDto } from './dto/auth.dto';
 import { RequiereScopes, UsuarioActual } from './requiere-scopes.decorator';
 import { SCOPES, type UsuarioToken } from './roles';
 
@@ -31,6 +31,36 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Correo o contraseña incorrectos.' })
   login(@Body() dto: LoginDto) {
     return this.auth.login(dto);
+  }
+
+  @Get('proveedores')
+  @ApiOperation({ summary: 'Inicios de sesión con Google o Facebook disponibles (datos públicos para el frontend)' })
+  proveedores() {
+    return this.auth.proveedores();
+  }
+
+  @Post('google')
+  @HttpCode(HttpStatus.OK)
+  @Throttle(LIMITE_LOGIN)
+  @ApiOperation({ summary: 'Ingresar o crear cuenta de cliente con Google (verifica el ID token)' })
+  @ApiResponse({ status: 200, type: TokenResponseDto })
+  @ApiResponse({ status: 401, description: 'Token de Google inválido, vencido o de otra aplicación.' })
+  @ApiResponse({ status: 403, description: 'La cuenta del operador no puede usar Google.' })
+  @ApiResponse({ status: 404, description: 'Google no está configurado en el servidor.' })
+  conGoogle(@Body() dto: GoogleLoginDto) {
+    return this.auth.conGoogle(dto.credential);
+  }
+
+  @Post('facebook')
+  @HttpCode(HttpStatus.OK)
+  @Throttle(LIMITE_LOGIN)
+  @ApiOperation({ summary: 'Ingresar o crear cuenta de cliente con Facebook (verifica el access token)' })
+  @ApiResponse({ status: 200, type: TokenResponseDto })
+  @ApiResponse({ status: 401, description: 'Token de Facebook inválido, vencido o de otra aplicación.' })
+  @ApiResponse({ status: 403, description: 'La cuenta del operador no puede usar Facebook.' })
+  @ApiResponse({ status: 404, description: 'Facebook no está configurado en el servidor.' })
+  conFacebook(@Body() dto: FacebookLoginDto) {
+    return this.auth.conFacebook(dto.accessToken);
   }
 
   @Get('me')
