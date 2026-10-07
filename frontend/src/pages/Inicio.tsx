@@ -24,7 +24,9 @@ export default function Inicio() {
 
   useEffect(() => {
     let vigente = true;
-    Promise.allSettled([api.listar(50, 0), api.buscar([], 'most_popular')]).then(([cat, pop]) => {
+    // 100 es el máximo que acepta el backend (ver ListAtraccionesQueryDto); con 89 atracciones
+    // en el catálogo esto trae el total completo, así el conteo por aeropuerto no queda truncado.
+    Promise.allSettled([api.listar(100, 0), api.buscar([], 'most_popular')]).then(([cat, pop]) => {
       if (!vigente) return;
       if (cat.status === 'fulfilled') setCatalogo(cat.value.data);
       if (pop.status === 'fulfilled') setDestacadas(pop.value.data.slice(0, 6));
