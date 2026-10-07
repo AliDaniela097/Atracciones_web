@@ -137,7 +137,6 @@ export interface ReporteVentas {
 /** GET /auth/proveedores: inicios de sesión sociales configurados en el servidor */
 export interface ProveedoresSociales {
   google: { clientId: string } | null;
-  facebook: { appId: string } | null;
 }
 
 /** GET /reportes/reservas/{codigo}: verificación de una entrada (operador) */

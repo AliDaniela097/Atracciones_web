@@ -23,12 +23,21 @@ import { AuthModule } from './modules/auth/auth.module';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        url: configService.get<string>('DATABASE_URL'),
-        autoLoadEntities: true,
-        synchronize: configService.get<string>('NODE_ENV') !== 'production', // Precaución en producción
-      }),
+      useFactory: (configService: ConfigService) => {
+        const enProduccion = configService.get<string>('NODE_ENV') === 'production';
+        return {
+          type: 'postgres',
+          url: configService.get<string>('DATABASE_URL'),
+          autoLoadEntities: true,
+          // Este proyecto no tiene migraciones, así que el esquema se crea/actualiza
+          // sincronizando las entidades. DB_SYNCHRONIZE permite apagarlo explícitamente
+          // (por ejemplo, una vez que la base de producción ya tiene el esquema creado
+          // y se prefiere evitar que TypeORM vuelva a tocarla en cada despliegue).
+          synchronize: configService.get<string>('DB_SYNCHRONIZE') !== 'false',
+          // Neon (y la mayoría de Postgres administrados) exigen TLS; en local no es necesario.
+          ssl: enProduccion ? { rejectUnauthorized: false } : false,
+        };
+      },
     }),
 
     // Seguridad: límite de peticiones por IP (100 por minuto). Si se supera responde 429.

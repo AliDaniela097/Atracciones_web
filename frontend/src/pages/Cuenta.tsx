@@ -41,6 +41,7 @@ export function Ingresar() {
       <div className="tarjeta acceso-tarjeta">
         <h1 id="titulo-ingresar">Ingresar</h1>
         <p className="nota">Usa tu cuenta para reservar y ver tus reservas.</p>
+        <BotonesSociales modo="ingresar" alEntrar={(u) => navigate(destino || (u.role === 'OPERADOR' ? '/admin' : '/'), { replace: true })} />
         <form onSubmit={enviar} className="formulario">
           <label className="campo">
             Correo
@@ -55,7 +56,6 @@ export function Ingresar() {
             {enviando ? 'Ingresando…' : 'Ingresar'}
           </button>
         </form>
-        <BotonesSociales alEntrar={(u) => navigate(destino || (u.role === 'OPERADOR' ? '/admin' : '/'), { replace: true })} />
         <p className="acceso-pie">
           ¿No tienes cuenta?{' '}
           <Link to={`/registro${destino ? `?volver=${encodeURIComponent(destino)}` : ''}`}>Crea una gratis</Link>
@@ -95,6 +95,7 @@ export function Registro() {
       <div className="tarjeta acceso-tarjeta">
         <h1 id="titulo-registro">Crear cuenta</h1>
         <p className="nota">Con tu cuenta reservas entradas y tours, y las consultas cuando quieras.</p>
+        <BotonesSociales modo="registro" alEntrar={() => navigate(destino, { replace: true })} />
         <form onSubmit={enviar} className="formulario">
           <label className="campo">
             Nombre completo
@@ -123,7 +124,6 @@ export function Registro() {
             {enviando ? 'Creando cuenta…' : 'Crear cuenta'}
           </button>
         </form>
-        <BotonesSociales alEntrar={() => navigate(destino, { replace: true })} />
         <p className="acceso-pie">
           ¿Ya tienes cuenta? <Link to={`/ingresar${destino !== '/' ? `?volver=${encodeURIComponent(destino)}` : ''}`}>Ingresa</Link>
         </p>

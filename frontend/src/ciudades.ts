@@ -78,13 +78,14 @@ export function nombreIdioma(codigo: string) {
   return IDIOMAS[codigo.toLowerCase().slice(0, 2)] ?? codigo.toUpperCase();
 }
 
-/** PT6H -> "6 h", PT1H30M -> "1 h 30 min" */
+/** PT6H -> "6 h", PT1H30M -> "1 h 30 min", P4D -> "4 días" */
 export function formatoDuracion(iso: string) {
-  const m = /^PT(?:(\d+)H)?(?:(\d+)M)?$/.exec(iso);
+  const m = /^P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?)?$/.exec(iso);
   if (!m) return iso;
   const partes = [];
-  if (m[1]) partes.push(`${m[1]} h`);
-  if (m[2]) partes.push(`${m[2]} min`);
+  if (m[1]) partes.push(`${m[1]} ${m[1] === '1' ? 'día' : 'días'}`);
+  if (m[2]) partes.push(`${m[2]} h`);
+  if (m[3]) partes.push(`${m[3]} min`);
   return partes.join(' ') || iso;
 }
 

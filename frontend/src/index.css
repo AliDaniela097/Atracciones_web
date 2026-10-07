@@ -2854,12 +2854,22 @@ h3 {
   }
 }
 
-/* ---------- Ingreso con Google y Facebook ---------- */
+/* ---------- Ingreso con Google ---------- */
 
 .sociales {
   display: grid;
   gap: 12px;
-  margin-top: 18px;
+  margin: 18px 0 16px;
+}
+
+.sociales-botones {
+  display: grid;
+  gap: 10px;
+}
+
+.btn--social {
+  border-color: var(--linea);
+  white-space: normal;
 }
 
 .separador-o {
@@ -2885,14 +2895,6 @@ h3 {
   min-height: 44px;
 }
 
-.btn--facebook {
-  background: #1877f2;
-  color: #fff;
-}
-
-.btn--facebook:hover {
-  background: #166fe5;
-}
 
 .sociales-nota {
   margin: 0;

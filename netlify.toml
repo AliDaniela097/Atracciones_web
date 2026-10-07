@@ -1,0 +1,18 @@
+# Despliegue del frontend (React + Vite) ubicado en frontend/.
+# El backend (NestJS) vive en la raíz del repo y se despliega aparte en Railway;
+# este archivo no lo afecta.
+
+[build]
+  base = "frontend"
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# SPA con react-router (BrowserRouter): toda ruta que no sea un archivo real
+# debe servir index.html para que el enrutador del lado del cliente la resuelva.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

@@ -14,7 +14,7 @@ export class Usuario {
 
   /**
    * Contraseña cifrada con bcrypt. Nunca se guarda ni se devuelve la contraseña real.
-   * Es null en cuentas creadas con Google o Facebook (esas cuentas no tienen contraseña).
+   * Es null en cuentas creadas con Google (esas cuentas no tienen contraseña).
    */
   @Column({ type: 'varchar', length: 100, select: false, nullable: true })
   claveHash: string | null;
@@ -22,10 +22,6 @@ export class Usuario {
   /** Identificador de la cuenta de Google ("sub" del ID token), si la persona entró con Google */
   @Column({ type: 'varchar', length: 64, nullable: true, unique: true })
   googleId: string | null;
-
-  /** Identificador de la cuenta de Facebook (id de Graph API), si la persona entró con Facebook */
-  @Column({ type: 'varchar', length: 64, nullable: true, unique: true })
-  facebookId: string | null;
 
   @Column({ type: 'enum', enum: Rol, default: Rol.CLIENTE })
   rol: Rol;

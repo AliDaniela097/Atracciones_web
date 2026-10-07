@@ -5,8 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex" />
     <meta name="theme-color" content="#0f1513" />
-    <title>Observabilidad · Panel del operador · Atracciones Ecuador</title>
+    <title>Observabilidad, panel del operador, Atracciones Ecuador</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500;6..96,600&family=Manrope:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="/admin/observabilidad.css" />
     <!-- Instrumentación: se carga primero para registrar también errores de esta página -->
     <script src="/admin/script.js"></script>
@@ -15,91 +21,164 @@
     <a class="saltar" href="#contenido">Saltar al contenido</a>
 
     <header class="cabecera">
-      <a class="volver" href="/admin">Volver al panel del operador</a>
-      <div>
-        <h1>Observabilidad</h1>
+      <div class="cabecera-izq">
+        <a class="volver" href="/admin">← Volver al panel</a>
+        <div class="titulo-fila">
+          <h1>Observabilidad</h1>
+          <span class="en-vivo" id="en-vivo" role="status">
+            <span class="punto" aria-hidden="true"></span>
+            <span id="en-vivo-texto">En vivo</span>
+          </span>
+        </div>
         <p class="subtitulo">
-          Registro local de este navegador: rendimiento, errores, clics, visibilidad de la pestaña y entorno.
-          Los datos se guardan en <code>localStorage</code> con el prefijo <code>atracciones-observability:</code>.
+          Lo que pasa en tu página mientras la usan: qué tan rápido carga, si algo falla y qué tocan las personas.
+          Los datos son de <strong>este navegador</strong> y se guardan en <code>localStorage</code> con el prefijo
+          <code>atracciones-observability:</code>.
         </p>
       </div>
+      <nav class="barra" aria-label="Acciones del registro" id="barra" hidden>
+        <button type="button" class="boton" id="btn-actualizar">Actualizar</button>
+        <button type="button" class="boton boton--suave" id="btn-auto" aria-pressed="true">Actualización automática</button>
+        <button type="button" class="boton boton--suave" id="btn-demo">Generar eventos de prueba</button>
+        <button type="button" class="boton boton--suave" id="btn-exportar">Exportar JSON</button>
+        <button type="button" class="boton boton--peligro" id="btn-limpiar">Limpiar registro</button>
+      </nav>
     </header>
 
     <main id="contenido" tabindex="-1">
-      <!-- Se muestra si quien abre la página no inició sesión como operador -->
       <section id="sin-acceso" class="aviso" hidden aria-labelledby="titulo-sin-acceso">
         <h2 id="titulo-sin-acceso">Esta página es solo para el operador</h2>
         <p>Inicia sesión con la cuenta del operador y vuelve a abrir “Observabilidad” desde el panel.</p>
         <p><a class="boton" href="/ingresar">Ingresar</a></p>
       </section>
 
-      <div id="tablero" hidden>
-        <section class="barra" aria-label="Acciones del registro">
-          <button type="button" class="boton" id="btn-actualizar">Actualizar</button>
-          <button type="button" class="boton boton--suave" id="btn-auto" aria-pressed="true">Actualización automática</button>
-          <button type="button" class="boton boton--suave" id="btn-demo">Generar eventos de prueba</button>
-          <button type="button" class="boton boton--suave" id="btn-exportar">Exportar JSON</button>
-          <button type="button" class="boton boton--peligro" id="btn-limpiar">Limpiar registro</button>
-        </section>
-
+      <div id="tablero" class="tablero" hidden>
         <p id="estado" class="estado" role="status" aria-live="polite">Cargando registro…</p>
-        <p id="aviso-api" class="nota" hidden></p>
+        <p id="aviso-api" class="nota nota--aviso" hidden></p>
 
-        <section aria-labelledby="titulo-resumen">
-          <h2 id="titulo-resumen" class="sr-only">Resumen</h2>
-          <div class="kpis" id="kpis" aria-busy="true">
-            <div class="kpi"><p class="kpi-valor" id="k-eventos">–</p><p class="kpi-texto">eventos registrados</p></div>
-            <div class="kpi"><p class="kpi-valor" id="k-errores">–</p><p class="kpi-texto">errores (JS, promesas y recursos)</p></div>
-            <div class="kpi"><p class="kpi-valor" id="k-clics">–</p><p class="kpi-texto">clics e interacciones</p></div>
-            <div class="kpi"><p class="kpi-valor" id="k-vistas">–</p><p class="kpi-texto">páginas y vistas abiertas</p></div>
-            <div class="kpi"><p class="kpi-valor" id="k-visibilidad">–</p><p class="kpi-texto">cambios de pestaña</p></div>
-            <div class="kpi"><p class="kpi-valor" id="k-carga">–</p><p class="kpi-texto">última carga completa</p></div>
-          </div>
+        <!-- 1. Resumen en números -->
+        <section class="kpis" id="kpis" aria-label="Resumen" aria-busy="true">
+          <article class="kpi" data-kpi="eventos">
+            <p class="kpi-etiqueta">Eventos registrados</p>
+            <p class="kpi-valor" id="k-eventos">0</p>
+            <p class="kpi-ayuda">Todo lo que se anotó: visitas, clics, cargas y errores.</p>
+          </article>
+          <article class="kpi" data-kpi="errores">
+            <p class="kpi-etiqueta">Errores</p>
+            <p class="kpi-valor" id="k-errores" aria-live="polite" aria-atomic="true">0</p>
+            <p class="kpi-ayuda">Fallos de código o archivos que no cargaron. Lo ideal es 0.</p>
+          </article>
+          <article class="kpi" data-kpi="clics">
+            <p class="kpi-etiqueta">Clics e interacciones</p>
+            <p class="kpi-valor" id="k-clics">0</p>
+            <p class="kpi-ayuda">Botones, enlaces y campos que tocaron las personas.</p>
+          </article>
+          <article class="kpi" data-kpi="vistas">
+            <p class="kpi-etiqueta">Páginas vistas</p>
+            <p class="kpi-valor" id="k-vistas">0</p>
+            <p class="kpi-ayuda">Pantallas abiertas: inicio, explorar, una atracción…</p>
+          </article>
+          <article class="kpi" data-kpi="visibilidad">
+            <p class="kpi-etiqueta">Cambios de pestaña</p>
+            <p class="kpi-valor" id="k-visibilidad">0</p>
+            <p class="kpi-ayuda">Veces que la persona se fue a otra pestaña y volvió.</p>
+          </article>
+          <article class="kpi" data-kpi="carga">
+            <p class="kpi-etiqueta">Última carga</p>
+            <p class="kpi-valor" id="k-carga">–</p>
+            <p class="kpi-ayuda">Segundos que tardó la página en cargar completa.</p>
+          </article>
         </section>
 
-        <div class="columnas">
-          <section class="panel" aria-labelledby="titulo-rendimiento">
-            <h2 id="titulo-rendimiento">Rendimiento de la última carga</h2>
-            <dl class="datos" id="rendimiento"></dl>
+        <!-- 2. Actividad en el tiempo + salud -->
+        <div class="fila fila--actividad">
+          <section class="panel panel--actividad" aria-labelledby="titulo-actividad">
+            <div class="panel-cabecera">
+              <div>
+                <h2 id="titulo-actividad">Actividad en los últimos 30 minutos</h2>
+                <p class="nota">Cada columna es un minuto. Pasa el cursor (o el foco) por una columna para ver el detalle.</p>
+              </div>
+              <ul class="leyenda" aria-label="Leyenda">
+                <li><span class="muestra muestra--normal" aria-hidden="true"></span>Eventos</li>
+                <li><span class="muestra muestra--error" aria-hidden="true"></span>Errores</li>
+              </ul>
+            </div>
+            <div class="grafico" id="grafico-actividad">
+              <div class="grafico-eje" id="eje-y" aria-hidden="true"></div>
+              <div class="grafico-columnas" id="columnas" role="list" aria-label="Eventos por minuto"></div>
+              <div class="tooltip" id="tooltip" role="tooltip" hidden></div>
+            </div>
+            <div class="grafico-x" aria-hidden="true">
+              <span>hace 30 min</span><span>hace 15 min</span><span>ahora</span>
+            </div>
+            <details class="ver-tabla">
+              <summary>Ver estos datos en tabla</summary>
+              <div class="tabla-contenedor" tabindex="0" role="region" aria-label="Eventos y errores por minuto">
+                <table class="tabla tabla--compacta">
+                  <caption class="sr-only">Eventos y errores por minuto (solo minutos con actividad)</caption>
+                  <thead><tr><th scope="col">Minuto</th><th scope="col">Eventos</th><th scope="col">Errores</th></tr></thead>
+                  <tbody id="tabla-actividad"></tbody>
+                </table>
+              </div>
+            </details>
+          </section>
+
+          <section class="panel panel--salud" aria-labelledby="titulo-salud">
+            <h2 id="titulo-salud">¿Qué tan rápida es tu página?</h2>
+            <div class="semaforo" id="semaforo" role="status">
+              <span class="semaforo-icono" id="semaforo-icono" aria-hidden="true">●</span>
+              <div>
+                <p class="semaforo-titulo" id="semaforo-titulo">Sin datos todavía</p>
+                <p class="nota" id="semaforo-texto">Abre la página principal y espera a que cargue.</p>
+              </div>
+            </div>
+            <ul class="medidores" id="medidores"></ul>
+            <p class="nota nota--pie">
+              Umbrales de Google Web Vitals (web.dev): TTFB 0,8 s / 1,8 s, FCP 1,8 s / 3 s, LCP 2,5 s / 4 s.
+              Para la carga completa se usa una referencia propia de 3 s / 6 s.
+            </p>
+          </section>
+        </div>
+
+        <!-- 3. Tipos de evento + entorno -->
+        <div class="fila fila--detalle">
+          <section class="panel" aria-labelledby="titulo-tipos">
+            <h2 id="titulo-tipos">Eventos por tipo</h2>
+            <p class="nota">Toca una barra para ver el detalle de esos eventos en el registro.</p>
+            <ul class="barras" id="por-tipo"></ul>
           </section>
 
           <section class="panel" aria-labelledby="titulo-entorno">
-            <h2 id="titulo-entorno">Entorno del navegador</h2>
-            <dl class="datos" id="entorno"></dl>
-            <h3>APIs disponibles</h3>
+            <h2 id="titulo-entorno">Desde dónde se usa</h2>
+            <div class="entorno" id="entorno"></div>
+            <h3>Funciones que tiene este navegador</h3>
             <ul class="apis" id="apis"></ul>
           </section>
         </div>
 
-        <section class="panel" aria-labelledby="titulo-tipos">
-          <h2 id="titulo-tipos">Eventos por tipo</h2>
-          <p class="nota">Toca una barra para ver el detalle de esos eventos en el registro.</p>
-          <ul class="barras" id="por-tipo"></ul>
-        </section>
-
+        <!-- 4. Registro -->
         <section class="panel" aria-labelledby="titulo-registro">
-          <div class="encabezado-panel">
-            <h2 id="titulo-registro">Registro de eventos</h2>
-            <label class="campo-filtro">
-              Tipo
-              <select id="filtro"></select>
-            </label>
+          <div class="panel-cabecera">
+            <div>
+              <h2 id="titulo-registro">Registro de eventos</h2>
+              <p class="nota" id="nota-registro"></p>
+            </div>
+            <div class="filtros" id="filtros" role="radiogroup" aria-label="Filtrar por tipo"></div>
           </div>
           <div class="tabla-contenedor" tabindex="0" role="region" aria-labelledby="titulo-registro">
             <table class="tabla">
-              <caption class="sr-only" id="caption-registro">Eventos más recientes primero</caption>
+              <caption class="sr-only">Eventos más recientes primero</caption>
               <thead>
                 <tr>
                   <th scope="col">Hora</th>
                   <th scope="col">Tipo</th>
                   <th scope="col">Página</th>
-                  <th scope="col">Detalle</th>
+                  <th scope="col">Qué pasó</th>
                 </tr>
               </thead>
               <tbody id="registro"></tbody>
             </table>
           </div>
-          <p class="nota" id="nota-registro"></p>
         </section>
 
         <section class="panel" id="panel-respaldo" hidden aria-labelledby="titulo-respaldo">

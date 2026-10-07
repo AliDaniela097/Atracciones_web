@@ -15,7 +15,6 @@ interface ContextoAuth {
   ingresar: (email: string, clave: string) => Promise<Usuario>;
   registrar: (nombre: string, email: string, clave: string) => Promise<Usuario>;
   conGoogle: (credential: string) => Promise<Usuario>;
-  conFacebook: (accessToken: string) => Promise<Usuario>;
   salir: () => void;
 }
 
@@ -87,7 +86,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ingresar: async (email, clave) => desdeToken(await api.login(email, clave)),
       registrar: async (nombre, email, clave) => desdeToken(await api.registro(nombre, email, clave)),
       conGoogle: async (credential) => desdeToken(await api.conGoogle(credential)),
-      conFacebook: async (accessToken) => desdeToken(await api.conFacebook(accessToken)),
       salir,
     }),
     [sesion, desdeToken, salir],

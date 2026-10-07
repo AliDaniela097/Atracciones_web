@@ -1,22 +1,17 @@
 import { createPublicKey, createVerify, type JsonWebKey } from 'node:crypto';
 
 /**
- * Verificación de identidades de Google y Facebook SIN dependencias externas.
+ * Verificación de la identidad de Google SIN dependencias externas.
  *
  * Google (Sign in with Google / Google Identity Services):
  *   el navegador recibe un ID token (JWT firmado con RS256). Aquí se verifica:
  *   firma con las llaves públicas de Google, emisor (iss), audiencia (aud = nuestro Client ID),
  *   vencimiento (exp) y que el correo esté verificado.
  *   Doc: https://developers.google.com/identity/gsi/web/guides/verify-google-id-token
- *
- * Facebook (Facebook Login para la Web):
- *   el navegador recibe un access token. Aquí se pregunta a Graph API si el token es válido
- *   y si fue emitido para NUESTRA app (debug_token), y luego se leen nombre y correo (/me).
- *   Doc: https://developers.facebook.com/docs/facebook-login/guides/access-tokens/debugging
  */
 
 export interface IdentidadSocial {
-  proveedor: 'google' | 'facebook';
+  proveedor: 'google';
   id: string;
   email: string;
   nombre: string;
@@ -79,25 +74,4 @@ export async function verificarGoogle(idToken: string, clientId: string): Promis
     email: datos.email.toLowerCase(),
     nombre: String(datos.name ?? datos.email).slice(0, 150),
   };
-}
-
-// ------------------------------------------------------------------ Facebook
-const GRAPH = 'https://graph.facebook.com/v19.0';
-
-export async function verificarFacebook(accessToken: string, appId: string, appSecret: string): Promise<IdentidadSocial> {
-  const appToken = `${appId}|${appSecret}`;
-  const dbg = await fetch(
-    `${GRAPH}/debug_token?input_token=${encodeURIComponent(accessToken)}&access_token=${encodeURIComponent(appToken)}`,
-  );
-  const info = (await dbg.json().catch(() => null)) as { data?: { is_valid?: boolean; app_id?: string; user_id?: string } } | null;
-  if (!dbg.ok || !info?.data?.is_valid) throw new ErrorProveedor('El inicio de sesión con Facebook no es válido o ya venció.');
-  if (info.data.app_id !== appId) throw new ErrorProveedor('El token de Facebook no es para esta aplicación.');
-
-  const me = await fetch(`${GRAPH}/me?fields=id,name,email&access_token=${encodeURIComponent(accessToken)}`);
-  const perfil = (await me.json().catch(() => null)) as { id?: string; name?: string; email?: string } | null;
-  if (!me.ok || !perfil?.id || perfil.id !== info.data.user_id) throw new ErrorProveedor('No se pudo leer tu perfil de Facebook.');
-  if (!perfil.email) {
-    throw new ErrorProveedor('Facebook no compartió tu correo. Acepta el permiso de correo o crea la cuenta con tu email.');
-  }
-  return { proveedor: 'facebook', id: perfil.id, email: perfil.email.toLowerCase(), nombre: (perfil.name ?? perfil.email).slice(0, 150) };
 }

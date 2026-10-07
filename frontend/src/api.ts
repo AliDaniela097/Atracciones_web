@@ -68,9 +68,6 @@ export const api = {
   conGoogle: (credential: string) =>
     request<TokenResponse>('/auth/google', { method: 'POST', body: JSON.stringify({ credential }) }),
 
-  conFacebook: (accessToken: string) =>
-    request<TokenResponse>('/auth/facebook', { method: 'POST', body: JSON.stringify({ accessToken }) }),
-
   // ---------- Catálogo ----------
   listar: (limit = 12, offset = 0) =>
     request<PaginatedAtracciones>(`/atracciones?limit=${limit}&offset=${offset}`),
