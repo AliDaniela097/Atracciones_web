@@ -1,0 +1,1361 @@
+openapi: 3.0.3
+
+info:
+  title: API de Atracciones Turísticas - Contrato de la aplicación implementada
+  version: 2.0.0
+  description: |
+    Contrato de la aplicación **Atracciones Web** tal como está implementada y desplegada.
+
+    Incluye las 14 operaciones del contrato del grupo (`atracciones-openapi.yaml`, v1.2.0)
+    más los endpoints propios de la aplicación: autenticación (`/auth/*`) y reportes del operador (`/reportes/*`).
+
+    **Autenticación.** La API emite su propio token JWT (Bearer). Se obtiene en `POST /auth/login`,
+    `POST /auth/registro` o `POST /auth/google`. Los permisos (scopes) usan los mismos nombres del contrato del grupo.
+
+    | Rol | Scopes |
+    |---|---|
+    | CLIENTE | attractions:read, attractions:book, attractions:cancel |
+    | OPERADOR | attractions:read, attractions:cancel, attractions:write (no puede reservar) |
+
+    **Endpoints públicos (sin token):** health, búsqueda, detalles por lote, listado, detalle y disponibilidad de atracciones, y los endpoints de `/auth` que no son `/auth/me`.
+
+    **Idempotencia.** Reservar y cancelar exigen la cabecera `Idempotency-Key` (UUID). Repetir la misma clave sobre la misma operación devuelve la respuesta guardada. Usar una clave de otra operación devuelve 409.
+
+    **Errores.** Siguen el formato RFC 7807 (`application/problem+json`).
+
+    **Límites de uso.** General: 100 peticiones por minuto por IP. Login, registro y Google: 5 por minuto. Reservar y cancelar: 10 por minuto.
+
+    **Moneda y país.** Solo USD y Ecuador (`country: ec`).
+
+servers:
+  - url: https://atraccionesweb-production.up.railway.app/api/v1
+    description: Producción (Railway)
+  - url: http://localhost:3000/api/v1
+    description: Desarrollo local
+
+tags:
+  - name: Atracciones - Catálogo
+    description: Consulta pública y administración del catálogo
+  - name: Atracciones - Reservas
+    description: Ciclo de vida de las reservas
+  - name: Autenticación
+    description: Registro, inicio de sesión y perfil (propio de la aplicación)
+  - name: Reportes (operador)
+    description: Reportes y verificación de entradas para el operador (propio de la aplicación)
+
+paths:
+  /atracciones/health:
+    get:
+      tags: [Atracciones - Catálogo]
+      summary: Healthcheck del microservicio
+      security: []
+      responses:
+        '200':
+          description: Servicio operativo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: UP
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /atracciones/search:
+    post:
+      tags: [Atracciones - Catálogo]
+      summary: Búsqueda de atracciones
+      description: Búsqueda con filtros por ciudad, país, fechas, calificación, orden y paginación por token.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchAtraccionesRequest'
+      responses:
+        '200':
+          description: Resultados de la búsqueda
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchAtraccionesResponse'
+        '400':
+          $ref: '#/components/responses/Problem400'
+
+  /atracciones/details:
+    post:
+      tags: [Atracciones - Catálogo]
+      summary: Detalles de múltiples atracciones (por lote)
+      description: Recibe hasta 50 identificadores y evita consultas una por una.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DetailsRequest'
+      responses:
+        '200':
+          description: Detalles de las atracciones pedidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchAtraccionesResponse'
+        '400':
+          $ref: '#/components/responses/Problem400'
+
+  /atracciones:
+    get:
+      tags: [Atracciones - Catálogo]
+      summary: Listado paginado de atracciones
+      description: Ordenado por nombre ascendente. Paginación con `limit` y `offset`.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+      responses:
+        '200':
+          description: Listado recuperado
+          headers:
+            X-API-Deprecation-Date:
+              schema:
+                type: string
+              description: Fecha en que esta versión será deprecada.
+            Cache-Control:
+              schema:
+                type: string
+              description: Directivas de caché (max-age=300).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAtraccionResponse'
+        '400':
+          $ref: '#/components/responses/Problem400'
+    post:
+      tags: [Atracciones - Catálogo]
+      summary: Registrar una nueva atracción
+      security:
+        - bearerAuth: [attractions:write]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAtraccionRequest'
+      responses:
+        '201':
+          description: Atracción creada
+          headers:
+            Location:
+              schema:
+                type: string
+              description: Ruta de la atracción creada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AtraccionResponse'
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+
+  /atracciones/{id}:
+    parameters:
+      - $ref: '#/components/parameters/AtraccionId'
+    get:
+      tags: [Atracciones - Catálogo]
+      summary: Detalle de una atracción
+      security: []
+      responses:
+        '200':
+          description: Detalle de la atracción
+          headers:
+            X-API-Deprecation-Date:
+              schema:
+                type: string
+            Cache-Control:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AtraccionResponse'
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '404':
+          $ref: '#/components/responses/Problem404'
+    put:
+      tags: [Atracciones - Catálogo]
+      summary: Reemplazar los datos completos de una atracción
+      security:
+        - bearerAuth: [attractions:write]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAtraccionRequest'
+      responses:
+        '204':
+          description: Reemplazo exitoso, sin contenido
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+    patch:
+      tags: [Atracciones - Catálogo]
+      summary: Actualizar parcialmente una atracción
+      security:
+        - bearerAuth: [attractions:write]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAtraccionRequest'
+      responses:
+        '200':
+          description: Actualización exitosa
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AtraccionResponse'
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+    delete:
+      tags: [Atracciones - Catálogo]
+      summary: Eliminar una atracción
+      description: Borrado lógico (soft delete). La atracción deja de aparecer, pero sus reservas anteriores se conservan.
+      security:
+        - bearerAuth: [attractions:write]
+      responses:
+        '204':
+          description: Eliminación exitosa, sin contenido
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+
+  /atracciones/{id}/availability:
+    get:
+      tags: [Atracciones - Catálogo]
+      summary: Consultar la disponibilidad de cupos
+      description: Cupos disponibles = cupo diario de la atracción menos los tickets de reservas no canceladas en esa fecha.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/AtraccionId'
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          example: '2026-10-10'
+      responses:
+        '200':
+          description: Disponibilidad recuperada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AvailabilityResponse'
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '404':
+          $ref: '#/components/responses/Problem404'
+
+  /atracciones/{id}/reservations:
+    post:
+      tags: [Atracciones - Reservas]
+      summary: Crear una reserva
+      description: |
+        Solo el rol CLIENTE puede reservar. Se ejecuta en una transacción con bloqueo de la atracción, por lo que dos compras
+        simultáneas no pueden vender el mismo último cupo. Valida que la fecha no haya pasado, que el horario exista y que
+        haya cupos. La reserva queda en estado CONFIRMED y el total se calcula en USD.
+      security:
+        - bearerAuth: [attractions:book]
+      parameters:
+        - $ref: '#/components/parameters/AtraccionId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReservationRequest'
+      responses:
+        '201':
+          description: Reserva confirmada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservationResponse'
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+        '409':
+          $ref: '#/components/responses/Problem409'
+
+  /atracciones/reservations:
+    get:
+      tags: [Atracciones - Reservas]
+      summary: Historial de reservas
+      description: El cliente ve solo sus reservas; el operador ve todas. Ordenado de la más reciente a la más antigua.
+      security:
+        - bearerAuth: [attractions:read]
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+      responses:
+        '200':
+          description: Listado de reservas
+          headers:
+            X-Total-Count:
+              schema:
+                type: integer
+              description: Total de reservas disponibles (para paginar).
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReservationResponse'
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+
+  /atracciones/reservations/{reservationId}:
+    get:
+      tags: [Atracciones - Reservas]
+      summary: Detalle de una reserva
+      description: Un cliente que pide una reserva ajena recibe 404, igual que si no existiera.
+      security:
+        - bearerAuth: [attractions:read]
+      parameters:
+        - $ref: '#/components/parameters/ReservationId'
+      responses:
+        '200':
+          description: Detalle de la reserva
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservationResponse'
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+
+  /atracciones/reservations/{reservationId}/cancel:
+    post:
+      tags: [Atracciones - Reservas]
+      summary: Cancelar una reserva
+      description: |
+        El cliente solo puede cancelar sus propias reservas; el operador puede cancelar cualquiera.
+        Devuelve 409 si la reserva ya estaba cancelada o si la atracción no tiene cancelación gratuita.
+      security:
+        - bearerAuth: [attractions:cancel]
+      parameters:
+        - $ref: '#/components/parameters/ReservationId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelReservationRequest'
+      responses:
+        '200':
+          description: Cancelación procesada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservationResponse'
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+        '409':
+          $ref: '#/components/responses/Problem409'
+
+  /auth/registro:
+    post:
+      tags: [Autenticación]
+      summary: Crear una cuenta de cliente y recibir su token
+      description: Los operadores no se registran por aquí. Límite de 5 intentos por minuto por IP.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistroRequest'
+      responses:
+        '201':
+          description: Cuenta creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '409':
+          $ref: '#/components/responses/Problem409'
+
+  /auth/login:
+    post:
+      tags: [Autenticación]
+      summary: Iniciar sesión con correo y contraseña
+      description: Devuelve el mismo error si el correo o la contraseña son incorrectos. Límite de 5 intentos por minuto por IP.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Sesión iniciada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+
+  /auth/proveedores:
+    get:
+      tags: [Autenticación]
+      summary: Proveedores de inicio de sesión disponibles
+      description: Dato público para que el frontend sepa si debe mostrar el botón de Google.
+      security: []
+      responses:
+        '200':
+          description: Proveedores configurados
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  google:
+                    nullable: true
+                    type: object
+                    properties:
+                      clientId:
+                        type: string
+                    description: null si Google no está configurado en el servidor.
+
+  /auth/google:
+    post:
+      tags: [Autenticación]
+      summary: Ingresar o crear cuenta de cliente con Google
+      description: |
+        Verifica el ID token de Google en el servidor y entrega el token propio de la API.
+        La cuenta del operador no puede usar Google. Límite de 5 intentos por minuto por IP.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoogleLoginRequest'
+      responses:
+        '200':
+          description: Sesión iniciada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+
+  /auth/me:
+    get:
+      tags: [Autenticación]
+      summary: Datos de la cuenta que inició sesión
+      security:
+        - bearerAuth: [attractions:read]
+      responses:
+        '200':
+          description: Perfil del usuario
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usuario'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+
+  /reportes/ventas:
+    get:
+      tags: [Reportes (operador)]
+      summary: Reporte de ventas
+      description: |
+        Ingresos, entradas y reservas por atracción, por ciudad (aeropuerto) y por día, más las últimas 20 reservas.
+        Los ingresos cuentan solo reservas CONFIRMED; las canceladas se reportan aparte.
+        Si no se envían fechas, usa los últimos 30 días. Rango máximo: 366 días.
+      security:
+        - bearerAuth: [attractions:write]
+      parameters:
+        - name: desde
+          in: query
+          schema:
+            type: string
+            format: date
+          example: '2026-10-01'
+        - name: hasta
+          in: query
+          schema:
+            type: string
+            format: date
+          example: '2026-10-31'
+      responses:
+        '200':
+          description: Reporte del periodo
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+              description: no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReporteVentas'
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+
+  /reportes/reservas/{codigo}:
+    get:
+      tags: [Reportes (operador)]
+      summary: Verificar una entrada por su código
+      description: |
+        Acepta el código completo (UUID) o el código corto de 8 caracteres impreso en el comprobante (por ejemplo 75E3-667B),
+        como al escanear el QR. Indica si la entrada es válida para entrar o ya venció.
+      security:
+        - bearerAuth: [attractions:write]
+      parameters:
+        - name: codigo
+          in: path
+          required: true
+          schema:
+            type: string
+          example: 75E3-667B
+      responses:
+        '200':
+          description: Datos de la reserva y su validez
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+              description: no-store
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificacionEntrada'
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+        '409':
+          $ref: '#/components/responses/Problem409'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Token JWT emitido por esta misma API (emisor `atracciones-api`).
+        Contenido: sub (id), email, name, role y scope. Vigencia por defecto: 3600 segundos.
+        Scopes: attractions:read, attractions:book, attractions:cancel, attractions:write.
+
+  parameters:
+    AtraccionId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ReservationId:
+      name: reservationId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: UUID generado por el cliente para esta operación. Si falta o no es un UUID, responde 400.
+      schema:
+        type: string
+        format: uuid
+    Limit:
+      name: limit
+      in: query
+      description: Elementos por página
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 10
+    Offset:
+      name: offset
+      in: query
+      description: Elementos a saltar desde el inicio
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+
+  responses:
+    Problem400:
+      description: Petición inválida (datos, formato o cabecera Idempotency-Key incorrectos)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    Problem401:
+      description: Falta el token, es inválido o está vencido (o las credenciales son incorrectas)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    Problem403:
+      description: El token es válido pero no tiene el permiso (scope) necesario
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    Problem404:
+      description: Recurso no encontrado
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    Problem409:
+      description: Conflicto (sin cupos, reserva ya cancelada, sin cancelación gratuita, correo ya registrado o error de idempotencia)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+
+  schemas:
+    ProblemDetails:
+      type: object
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+
+    Price:
+      type: object
+      required: [currency, total]
+      properties:
+        currency:
+          type: string
+          example: USD
+        total:
+          type: number
+          minimum: 0
+          description: Monto total (0 = gratis)
+          example: 45.0
+
+    Coordinates:
+      type: object
+      required: [latitude, longitude]
+      properties:
+        latitude:
+          type: number
+          example: -0.680556
+        longitude:
+          type: number
+          example: -78.437778
+
+    Location:
+      type: object
+      required: [address, city, country, coordinates]
+      properties:
+        address:
+          type: string
+        city:
+          type: integer
+          description: Identificador numérico de la ciudad
+        country:
+          type: string
+          example: ec
+        coordinates:
+          $ref: '#/components/schemas/Coordinates'
+        type:
+          type: string
+          example: attraction
+
+    Photo:
+      type: object
+      required: [url]
+      properties:
+        url:
+          type: string
+          format: uri
+
+    Operator:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+          example: 123
+        name:
+          type: string
+          example: Quito Tour Bus
+
+    Rating:
+      type: object
+      properties:
+        number_of_reviews:
+          type: integer
+          minimum: 0
+        score:
+          type: number
+          minimum: 0
+          maximum: 5
+
+    Url:
+      type: object
+      properties:
+        web:
+          type: string
+        app:
+          type: string
+
+    ProductType:
+      type: string
+      enum: [SINGLE_TICKET, GUIDED_TOUR, PACKAGE]
+
+    DetailsRequest:
+      type: object
+      required: [attractions]
+      properties:
+        attractions:
+          type: array
+          maxItems: 50
+          items:
+            type: string
+        languages:
+          type: array
+          items:
+            type: string
+
+    SearchAtraccionesRequest:
+      type: object
+      properties:
+        currency:
+          type: string
+          example: USD
+          description: Solo se acepta USD
+        cities:
+          type: array
+          items:
+            type: integer
+        countries:
+          type: array
+          items:
+            type: string
+          example: [ec]
+        dates:
+          type: object
+          required: [start_date, end_date]
+          properties:
+            start_date:
+              type: string
+              format: date
+            end_date:
+              type: string
+              format: date
+        filters:
+          type: object
+          properties:
+            rating:
+              type: object
+              properties:
+                minimum_review_score:
+                  type: number
+                minimum_review_count:
+                  type: integer
+        next_page:
+          type: string
+          description: Token opaco de paginación
+        rows:
+          type: integer
+          minimum: 1
+          maximum: 100
+          example: 20
+        sort:
+          type: object
+          required: [by]
+          properties:
+            by:
+              type: string
+              enum: [most_popular, top_rated, price_asc, price_desc]
+
+    SearchAtraccionesResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AtraccionResponse'
+        metadata:
+          type: object
+          properties:
+            total_results:
+              type: integer
+            next_page:
+              type: string
+        request_id:
+          type: string
+
+    CreateAtraccionRequest:
+      type: object
+      required: [name, long_description, duration, price, operator, product_type, includes, categories, locations, photos, supported_languages, free_cancellation]
+      properties:
+        name:
+          type: string
+          minLength: 3
+        long_description:
+          type: string
+          minLength: 10
+        duration:
+          type: string
+          description: Duración en formato ISO 8601
+          example: PT8H
+        price:
+          $ref: '#/components/schemas/Price'
+        operator:
+          $ref: '#/components/schemas/Operator'
+        product_type:
+          $ref: '#/components/schemas/ProductType'
+        includes:
+          type: array
+          items:
+            type: string
+        categories:
+          type: array
+          items:
+            type: string
+        badges:
+          type: array
+          items:
+            type: string
+        locations:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/Location'
+        photos:
+          type: array
+          items:
+            $ref: '#/components/schemas/Photo'
+        supported_languages:
+          type: array
+          items:
+            type: string
+        free_cancellation:
+          type: boolean
+
+    UpdateAtraccionRequest:
+      type: object
+      description: Mismos campos que CreateAtraccionRequest, todos opcionales.
+      properties:
+        name:
+          type: string
+          minLength: 3
+        long_description:
+          type: string
+          minLength: 10
+        duration:
+          type: string
+        price:
+          $ref: '#/components/schemas/Price'
+        operator:
+          $ref: '#/components/schemas/Operator'
+        product_type:
+          $ref: '#/components/schemas/ProductType'
+        includes:
+          type: array
+          items:
+            type: string
+        categories:
+          type: array
+          items:
+            type: string
+        badges:
+          type: array
+          items:
+            type: string
+        locations:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/Location'
+        photos:
+          type: array
+          items:
+            $ref: '#/components/schemas/Photo'
+        supported_languages:
+          type: array
+          items:
+            type: string
+        free_cancellation:
+          type: boolean
+
+    AtraccionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        long_description:
+          type: string
+        duration:
+          type: string
+        price:
+          $ref: '#/components/schemas/Price'
+        operator:
+          $ref: '#/components/schemas/Operator'
+        product_type:
+          $ref: '#/components/schemas/ProductType'
+        includes:
+          type: array
+          items:
+            type: string
+        categories:
+          type: array
+          items:
+            type: string
+        badges:
+          type: array
+          items:
+            type: string
+        locations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Location'
+        photos:
+          type: array
+          items:
+            $ref: '#/components/schemas/Photo'
+        supported_languages:
+          type: array
+          items:
+            type: string
+        free_cancellation:
+          type: boolean
+        ratings:
+          $ref: '#/components/schemas/Rating'
+        url:
+          $ref: '#/components/schemas/Url'
+        _links:
+          type: object
+          description: Enlaces HATEOAS (self, actualizar, eliminar)
+          additionalProperties:
+            type: object
+            properties:
+              href:
+                type: string
+              method:
+                type: string
+
+    PaginatedAtraccionResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AtraccionResponse'
+        meta:
+          type: object
+          properties:
+            totalItems:
+              type: integer
+            itemCount:
+              type: integer
+            itemsPerPage:
+              type: integer
+            totalPages:
+              type: integer
+            currentPage:
+              type: integer
+        _links:
+          type: object
+          properties:
+            first:
+              type: string
+            previous:
+              type: string
+            next:
+              type: string
+            last:
+              type: string
+
+    AvailabilityResponse:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        available_spots:
+          type: integer
+          minimum: 0
+        times:
+          type: array
+          items:
+            type: string
+          example: ['10:00', '14:00']
+
+    ReservationRequest:
+      type: object
+      required: [date, ticket_count, customer_name]
+      properties:
+        date:
+          type: string
+          format: date
+          description: No puede ser una fecha pasada.
+        time:
+          type: string
+          example: '10:00'
+          description: Debe ser uno de los horarios de la atracción.
+        ticket_count:
+          type: integer
+          minimum: 1
+        customer_name:
+          type: string
+        customer_email:
+          type: string
+          format: email
+
+    ReservationResponse:
+      type: object
+      properties:
+        reservation_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [CONFIRMED, PENDING, CANCELLED]
+        ticket_count:
+          type: integer
+        total_price:
+          $ref: '#/components/schemas/Price'
+
+    CancelReservationRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          example: Plan cancelado
+
+    RegistroRequest:
+      type: object
+      required: [name, email, password]
+      properties:
+        name:
+          type: string
+          minLength: 3
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          maxLength: 180
+        password:
+          type: string
+          minLength: 8
+          maxLength: 72
+          format: password
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          maxLength: 72
+          format: password
+
+    GoogleLoginRequest:
+      type: object
+      required: [credential]
+      properties:
+        credential:
+          type: string
+          minLength: 20
+          maxLength: 4096
+          description: ID token (JWT) entregado por Google Identity Services en el navegador.
+
+    Usuario:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [CLIENTE, OPERADOR]
+
+    TokenResponse:
+      type: object
+      description: Mismo formato de un token OAuth2 (RFC 6749, sección 5.1).
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+          example: Bearer
+        expires_in:
+          type: integer
+          example: 3600
+          description: Segundos de validez
+        scope:
+          type: string
+          example: attractions:read attractions:book attractions:cancel
+        user:
+          $ref: '#/components/schemas/Usuario'
+
+    ReporteVentas:
+      type: object
+      properties:
+        moneda:
+          type: string
+          example: USD
+        periodo:
+          type: object
+          properties:
+            desde:
+              type: string
+              format: date
+            hasta:
+              type: string
+              format: date
+        generadoEn:
+          type: string
+          format: date-time
+        resumen:
+          type: object
+          properties:
+            reservas:
+              type: integer
+            confirmadas:
+              type: integer
+            canceladas:
+              type: integer
+            entradasVendidas:
+              type: integer
+            ingresos:
+              type: number
+            montoCancelado:
+              type: number
+            ticketPromedio:
+              type: number
+            clientes:
+              type: integer
+        porAtraccion:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              nombre:
+                type: string
+              ciudadId:
+                type: integer
+                nullable: true
+              reservas:
+                type: integer
+              entradas:
+                type: integer
+              ingresos:
+                type: number
+              canceladas:
+                type: integer
+        porAeropuerto:
+          type: array
+          items:
+            type: object
+            properties:
+              ciudadId:
+                type: integer
+              nombre:
+                type: string
+              iata:
+                type: string
+              reservas:
+                type: integer
+              entradas:
+                type: integer
+              ingresos:
+                type: number
+        porDia:
+          type: array
+          items:
+            type: object
+            properties:
+              fecha:
+                type: string
+                format: date
+              reservas:
+                type: integer
+              entradas:
+                type: integer
+              ingresos:
+                type: number
+        ultimas:
+          type: array
+          description: Las 20 reservas más recientes del periodo
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              fechaCompra:
+                type: string
+                format: date-time
+              fechaVisita:
+                type: string
+                format: date
+              hora:
+                type: string
+                nullable: true
+              atraccion:
+                type: string
+              entradas:
+                type: integer
+              total:
+                type: number
+              moneda:
+                type: string
+              estado:
+                type: string
+                enum: [CONFIRMED, PENDING, CANCELLED]
+              cliente:
+                type: string
+              email:
+                type: string
+                nullable: true
+
+    VerificacionEntrada:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        estado:
+          type: string
+          enum: [CONFIRMED, PENDING, CANCELLED]
+        entradas:
+          type: integer
+        total:
+          type: number
+        moneda:
+          type: string
+        fechaVisita:
+          type: string
+          format: date
+        hora:
+          type: string
+          nullable: true
+        fechaCompra:
+          type: string
+          format: date-time
+        cliente:
+          type: string
+        motivoCancelacion:
+          type: string
+          nullable: true
+        atraccionId:
+          type: string
+          format: uuid
+        atraccion:
+          type: string
+        ciudadId:
+          type: integer
+          nullable: true
+        valida:
+          type: boolean
+          description: true si la reserva está CONFIRMED y la fecha de visita no ha pasado (hora de Ecuador).
+        vencida:
+          type: boolean
+          description: true si la fecha de visita ya pasó.
