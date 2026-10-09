@@ -43,6 +43,8 @@ export class UsuarioDto {
   @ApiProperty() name: string;
   @ApiProperty() email: string;
   @ApiProperty({ enum: Rol }) role: Rol;
+  @ApiProperty({ required: false, description: 'true si es el administrador principal (el único que gestiona administradores)' })
+  principal?: boolean;
 }
 
 /** Respuesta con el mismo formato de un token OAuth2 (RFC 6749, sección 5.1) */

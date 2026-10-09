@@ -12,6 +12,7 @@ import AtraccionForm from './pages/admin/AtraccionForm';
 import AdminReservas from './pages/admin/AdminReservas';
 import AdminReportes from './pages/admin/AdminReportes';
 import VerificarReserva from './pages/admin/VerificarReserva';
+import AdminAdministradores from './pages/admin/AdminAdministradores';
 import { LayoutCliente, LayoutOperador } from './components/Layouts';
 import { EstadoVacio } from './components/Estados';
 import { RutaProtegida } from './auth';
@@ -105,6 +106,7 @@ export default function App() {
         <Route path="editar/:id" element={<AtraccionForm />} />
         <Route path="reservas" element={<AdminReservas />} />
         <Route path="reportes" element={<AdminReportes />} />
+        <Route path="administradores" element={<AdminAdministradores />} />
         <Route path="verificar" element={<VerificarReserva />} />
         <Route path="verificar/:codigo" element={<VerificarReserva />} />
       </Route>

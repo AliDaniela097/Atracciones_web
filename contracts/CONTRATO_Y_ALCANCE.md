@@ -53,10 +53,14 @@ ProblemDetails, Price, Coordinates, Location, Photo, Operator, Rating, Url, Deta
 | `GET /auth/me` | Datos del usuario autenticado | `attractions:read` |
 | `GET /reportes/ventas` | Reporte de ventas para el panel de administración | `attractions:write` |
 | `GET /reportes/reservas/:codigo` | Verificar una reserva por código | `attractions:write` |
+| `GET /administradores` | Listar cuentas de administrador (solo el administrador principal) | `attractions:write` |
+| `POST /administradores` | Crear un administrador; el correo se arma solo: `nombre.apellido@atracciones.ec` (solo el principal) | `attractions:write` |
+| `DELETE /administradores/:id` | Eliminar un administrador; el principal no se puede eliminar (solo el principal) | `attractions:write` |
 
 ### Comportamiento adicional
 
 - Autenticación con JWT propio y dos roles: CLIENTE (leer, reservar, cancelar) y OPERADOR (leer, cancelar, escribir).
+- Administrador principal (`OPERADOR_EMAIL`): crea y elimina otros administradores desde el panel. Una cuenta eliminada pierde el acceso de inmediato.
 - Contraseñas con hash bcrypt.
 - Límite de 100 peticiones por minuto por IP.
 - Cabeceras de seguridad (helmet) y CORS restringido por variable de entorno.

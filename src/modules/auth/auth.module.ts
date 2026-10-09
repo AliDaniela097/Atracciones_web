@@ -5,6 +5,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Usuario } from './entities/usuario.entity';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
+import { AdministradoresController } from './administradores.controller';
+import { AdministradoresService } from './administradores.service';
 import { AutenticacionGuard } from './guards/autenticacion.guard';
 import { OperadorSeed } from './seeds/operador.seed';
 import { ClienteDemoSeed } from './seeds/cliente-demo.seed';
@@ -27,8 +29,8 @@ import { ClienteDemoSeed } from './seeds/cliente-demo.seed';
       },
     }),
   ],
-  controllers: [AuthController],
-  providers: [AuthService, AutenticacionGuard, OperadorSeed, ClienteDemoSeed],
+  controllers: [AuthController, AdministradoresController],
+  providers: [AuthService, AdministradoresService, AutenticacionGuard, OperadorSeed, ClienteDemoSeed],
   exports: [JwtModule, AutenticacionGuard],
 })
 export class AuthModule {}

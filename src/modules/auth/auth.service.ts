@@ -6,7 +6,7 @@ import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { Usuario } from './entities/usuario.entity';
 import { LoginDto, RegistroDto, TokenResponseDto, UsuarioDto } from './dto/auth.dto';
-import { Rol, SCOPES_POR_ROL, UsuarioToken } from './roles';
+import { esCorreoPrincipal, Rol, SCOPES_POR_ROL, UsuarioToken } from './roles';
 import { ErrorProveedor, verificarGoogle, type IdentidadSocial } from './proveedores-sociales';
 
 const RONDAS_BCRYPT = 10;
@@ -127,6 +127,12 @@ export class AuthService {
   }
 
   private aDto(u: Usuario): UsuarioDto {
-    return { id: u.id, name: u.nombre, email: u.email, role: u.rol };
+    const dto: UsuarioDto = { id: u.id, name: u.nombre, email: u.email, role: u.rol };
+    if (u.rol === Rol.OPERADOR) dto.principal = this.esPrincipal(u.email);
+    return dto;
+  }
+
+  private esPrincipal(email: string) {
+    return esCorreoPrincipal(this.config.get<string>('OPERADOR_EMAIL'), email);
   }
 }

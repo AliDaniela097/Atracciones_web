@@ -91,6 +91,17 @@ export interface Usuario {
   name: string;
   email: string;
   role: Rol;
+  /** true si es el administrador principal (el único que gestiona administradores) */
+  principal?: boolean;
+}
+
+/** Cuenta de administrador (GET /administradores, solo para el administrador principal) */
+export interface Administrador {
+  id: string;
+  name: string;
+  email: string;
+  principal: boolean;
+  created_at: string;
 }
 
 export interface TokenResponse {

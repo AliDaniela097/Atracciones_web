@@ -41,3 +41,12 @@ export interface UsuarioToken {
 export function esOperador(u: UsuarioToken) {
   return u.scopes.includes(SCOPES.ESCRIBIR);
 }
+
+/**
+ * El administrador PRINCIPAL es la cuenta cuyo correo es OPERADOR_EMAIL (.env).
+ * Es el único que puede crear, listar y eliminar otros administradores, y no se puede eliminar.
+ */
+export function esCorreoPrincipal(principalConfigurado: string | undefined, email: string) {
+  const principal = (principalConfigurado ?? '').trim().toLowerCase();
+  return !!principal && email.trim().toLowerCase() === principal;
+}

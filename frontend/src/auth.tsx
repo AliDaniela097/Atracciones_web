@@ -12,6 +12,8 @@ interface Sesion {
 interface ContextoAuth {
   usuario: Usuario | null;
   esOperador: boolean;
+  /** Administrador principal: el único que crea y elimina otros administradores */
+  esPrincipal: boolean;
   ingresar: (email: string, clave: string) => Promise<Usuario>;
   registrar: (nombre: string, email: string, clave: string) => Promise<Usuario>;
   conGoogle: (credential: string) => Promise<Usuario>;
@@ -83,6 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       usuario: sesion?.usuario ?? null,
       esOperador: sesion?.usuario.role === 'OPERADOR',
+      esPrincipal: sesion?.usuario.role === 'OPERADOR' && sesion.usuario.principal === true,
       ingresar: async (email, clave) => desdeToken(await api.login(email, clave)),
       registrar: async (nombre, email, clave) => desdeToken(await api.registro(nombre, email, clave)),
       conGoogle: async (credential) => desdeToken(await api.conGoogle(credential)),

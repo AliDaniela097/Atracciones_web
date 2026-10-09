@@ -2,12 +2,13 @@ openapi: 3.0.3
 
 info:
   title: API de Atracciones Turísticas - Contrato de la aplicación implementada
-  version: 2.0.0
+  version: 2.1.0
   description: |
     Contrato de la aplicación **Atracciones Web** tal como está implementada y desplegada.
 
     Incluye las 14 operaciones del contrato del grupo (`atracciones-openapi.yaml`, v1.2.0)
-    más los endpoints propios de la aplicación: autenticación (`/auth/*`) y reportes del operador (`/reportes/*`).
+    más los endpoints propios de la aplicación: autenticación (`/auth/*`), reportes del operador (`/reportes/*`)
+    y gestión de administradores (`/administradores`, solo para el administrador principal).
 
     **Autenticación.** La API emite su propio token JWT (Bearer). Se obtiene en `POST /auth/login`,
     `POST /auth/registro` o `POST /auth/google`. Los permisos (scopes) usan los mismos nombres del contrato del grupo.
@@ -16,6 +17,11 @@ info:
     |---|---|
     | CLIENTE | attractions:read, attractions:book, attractions:cancel |
     | OPERADOR | attractions:read, attractions:cancel, attractions:write (no puede reservar) |
+
+    **Administrador principal.** Es la cuenta cuyo correo es `OPERADOR_EMAIL`. Es el único que puede crear, listar y eliminar
+    administradores, y no se puede eliminar. Cada administrador nuevo recibe el correo `nombre.apellido@atracciones.ec`
+    (primer nombre y primer apellido, sin tildes; si ya existe se agrega un número: `nombre.apellido2@atracciones.ec`).
+    Si se elimina una cuenta de administrador, pierde el acceso de inmediato, aunque su token no haya vencido.
 
     **Endpoints públicos (sin token):** health, búsqueda, detalles por lote, listado, detalle y disponibilidad de atracciones, y los endpoints de `/auth` que no son `/auth/me`.
 
@@ -40,6 +46,8 @@ tags:
     description: Ciclo de vida de las reservas
   - name: Autenticación
     description: Registro, inicio de sesión y perfil (propio de la aplicación)
+  - name: Administradores (principal)
+    description: Crear, listar y eliminar cuentas de administrador (propio de la aplicación)
   - name: Reportes (operador)
     description: Reportes y verificación de entradas para el operador (propio de la aplicación)
 
@@ -527,6 +535,82 @@ paths:
           $ref: '#/components/responses/Problem401'
         '403':
           $ref: '#/components/responses/Problem403'
+
+  /administradores:
+    get:
+      tags: [Administradores (principal)]
+      summary: Listar las cuentas de administrador
+      description: Solo el administrador principal. Si otro administrador lo intenta, responde 403.
+      security:
+        - bearerAuth: [attractions:write]
+      responses:
+        '200':
+          description: Cuentas de administrador, de la más antigua a la más reciente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Administrador'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+    post:
+      tags: [Administradores (principal)]
+      summary: Crear un administrador
+      description: |
+        Solo el administrador principal. El correo se arma solo a partir del primer nombre y el primer apellido:
+        `nombre.apellido@atracciones.ec`. Sin tildes, en minúsculas; si ya existe se agrega un número al final.
+        El nuevo administrador ingresa en `POST /auth/login` con ese correo y la contraseña definida aquí.
+      security:
+        - bearerAuth: [attractions:write]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearAdministradorRequest'
+      responses:
+        '201':
+          description: Administrador creado. El campo `email` es el correo para ingresar.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Administrador'
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '409':
+          $ref: '#/components/responses/Problem409'
+
+  /administradores/{id}:
+    delete:
+      tags: [Administradores (principal)]
+      summary: Eliminar un administrador
+      description: |
+        Solo el administrador principal. El principal no se puede eliminar (409). Solo se eliminan cuentas de administrador:
+        si el id es de un cliente, responde 404.
+      security:
+        - bearerAuth: [attractions:write]
+      parameters:
+        - $ref: '#/components/parameters/AtraccionId'
+      responses:
+        '204':
+          description: Administrador eliminado, sin contenido
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+        '409':
+          $ref: '#/components/responses/Problem409'
 
   /reportes/ventas:
     get:
@@ -1172,6 +1256,52 @@ components:
         role:
           type: string
           enum: [CLIENTE, OPERADOR]
+        principal:
+          type: boolean
+          description: Solo viene en cuentas de administrador. true si es el administrador principal.
+
+    CrearAdministradorRequest:
+      type: object
+      required: [first_name, last_name, password]
+      properties:
+        first_name:
+          type: string
+          minLength: 2
+          maxLength: 60
+          description: Nombres (solo letras). Para el correo se usa el primero.
+          example: María José
+        last_name:
+          type: string
+          minLength: 2
+          maxLength: 60
+          description: Apellidos (solo letras). Para el correo se usa el primero.
+          example: Pérez Andrade
+        password:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 72
+          description: Contraseña inicial
+
+    Administrador:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: María José Pérez Andrade
+        email:
+          type: string
+          example: maria.perez@atracciones.ec
+          description: Correo con el que ingresa al sitio
+        principal:
+          type: boolean
+          description: true si es el administrador principal (no se puede eliminar)
+        created_at:
+          type: string
+          format: date-time
 
     TokenResponse:
       type: object

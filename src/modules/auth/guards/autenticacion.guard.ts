@@ -1,7 +1,8 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
-import { SCOPES_KEY, type Rol, type UsuarioToken } from '../roles';
+import { DataSource } from 'typeorm';
+import { Rol, SCOPES_KEY, type UsuarioToken } from '../roles';
 
 interface PayloadToken {
   sub: string;
@@ -21,6 +22,7 @@ export class AutenticacionGuard implements CanActivate {
   constructor(
     private readonly jwt: JwtService,
     private readonly reflector: Reflector,
+    private readonly db: DataSource,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -44,6 +46,13 @@ export class AutenticacionGuard implements CanActivate {
       rol: payload.role,
       scopes: (payload.scope ?? '').split(' ').filter(Boolean),
     };
+
+    // El token es "sin estado": si se elimina una cuenta de administrador, su token seguiría valiendo hasta vencer.
+    // Por eso, con tokens de administrador se confirma que la cuenta todavía existe (una consulta liviana).
+    if (usuario.rol === Rol.OPERADOR) {
+      const filas = await this.db.query('SELECT 1 FROM usuarios WHERE id = $1 LIMIT 1', [usuario.id]);
+      if (filas.length === 0) throw new UnauthorizedException('La cuenta ya no existe. Inicia sesión de nuevo');
+    }
 
     const requeridos = this.reflector.getAllAndOverride<string[]>(SCOPES_KEY, [context.getHandler(), context.getClass()]) ?? [];
     const faltan = requeridos.filter((s) => !usuario.scopes.includes(s));

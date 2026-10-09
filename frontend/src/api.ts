@@ -1,5 +1,5 @@
 import type {
-  Atraccion, AtraccionInput, Availability, PaginatedAtracciones, ProblemDetails,
+  Administrador, Atraccion, AtraccionInput, Availability, PaginatedAtracciones, ProblemDetails,
   Reservation, ReservationRequest, SearchResponse, TokenResponse, ReporteVentas, ProveedoresSociales, VerificacionReserva } from './types';
 
 const API = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1';
@@ -95,6 +95,14 @@ export const api = {
 
   reporteVentas: (desde: string, hasta: string) =>
     request<ReporteVentas>(`/reportes/ventas?desde=${encodeURIComponent(desde)}&hasta=${encodeURIComponent(hasta)}`),
+
+  // ---------- Administradores (endpoint interno, solo el administrador principal) ----------
+  listarAdministradores: () => request<Administrador[]>('/administradores'),
+
+  crearAdministrador: (first_name: string, last_name: string, password: string) =>
+    request<Administrador>('/administradores', { method: 'POST', body: JSON.stringify({ first_name, last_name, password }) }),
+
+  eliminarAdministrador: (id: string) => request<void>(`/administradores/${id}`, { method: 'DELETE' }),
 
   crear: (data: AtraccionInput) =>
     request<Atraccion>('/atracciones', { method: 'POST', body: JSON.stringify(data) }),

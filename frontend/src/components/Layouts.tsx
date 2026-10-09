@@ -198,10 +198,16 @@ const SECCIONES_OPERADOR: Seccion[] = [
   { ruta: '/', texto: 'Ver sitio', icono: 'sitio', exacta: true },
 ];
 
+/** Solo el administrador principal ve la sección para crear y eliminar administradores */
+const SECCION_ADMINISTRADORES: Seccion = { ruta: '/admin/administradores', texto: 'Admins', icono: 'usuario' };
+
 /** Vista del operador: administra el catálogo y ve todas las reservas */
 export function LayoutOperador() {
-  const { usuario, salir } = useAuth();
+  const { usuario, esPrincipal, salir } = useAuth();
   const navigate = useNavigate();
+  const secciones = esPrincipal
+    ? [...SECCIONES_OPERADOR.slice(0, 4), SECCION_ADMINISTRADORES, ...SECCIONES_OPERADOR.slice(4)]
+    : SECCIONES_OPERADOR;
 
   return (
     <div className="app app--operador">
@@ -210,7 +216,7 @@ export function LayoutOperador() {
       </a>
       <aside className="lateral">
         <Marca destino="/admin" />
-        <Navegacion secciones={SECCIONES_OPERADOR} clase="nav-lateral" etiqueta="Panel del operador" />
+        <Navegacion secciones={secciones} clase="nav-lateral" etiqueta="Panel del operador" />
       </aside>
 
       <div className="app-cuerpo">
@@ -239,7 +245,7 @@ export function LayoutOperador() {
         </main>
       </div>
 
-      <Navegacion secciones={SECCIONES_OPERADOR} clase="nav-inferior" etiqueta="Panel del operador" />
+      <Navegacion secciones={secciones} clase="nav-inferior" etiqueta="Panel del operador" />
     </div>
   );
 }
