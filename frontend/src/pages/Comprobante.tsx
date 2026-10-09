@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { dinero, fechaLarga } from '../carrito';
+import { dinero, fechaHoraTexto, fechaLarga, horaTexto } from '../carrito';
 import { LLAVE_COMPROBANTE, type Comprobante as DatosComprobante } from './Checkout';
 import BotonCopiar from '../components/BotonCopiar';
 import Icono from '../components/Icono';
@@ -41,7 +41,7 @@ export default function Comprobante() {
           </p>
           <h1 id="titulo-comprobante">Compra confirmada</h1>
           <p>
-            Comprobante <strong>{c.numero}</strong>, {new Date(c.fecha).toLocaleString('es-EC', { dateStyle: 'long', timeStyle: 'short' })}
+            Comprobante <strong>{c.numero}</strong>, {fechaHoraTexto(c.fecha)}
           </p>
           <p>
             Titular: {c.titular} ({c.email})
@@ -65,7 +65,7 @@ export default function Comprobante() {
                   <strong>{it.nombre}</strong>
                   <p className="nota">
                     {fechaLarga(it.fecha)}
-                    {it.hora ? `, ${it.hora}` : ''}. {it.cantidad} {it.cantidad === 1 ? 'entrada' : 'entradas'}
+                    {it.hora ? `, ${horaTexto(it.hora)}` : ''}. {it.cantidad} {it.cantidad === 1 ? 'entrada' : 'entradas'}
                   </p>
                   <div className="entrada-qr">
                     <CodigoQR valor={urlVerificacion(it.codigo)} etiqueta={`Código QR de la entrada ${codigoCorto(it.codigo)} para ${it.nombre}`} />

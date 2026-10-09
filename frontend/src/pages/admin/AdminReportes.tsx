@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { api, fechaMasDias } from '../../api';
 import type { ReporteVentas } from '../../types';
-import { dinero } from '../../carrito';
+import { dinero, fechaHoraTexto } from '../../carrito';
 import { EstadoError } from '../../components/Estados';
 import EstadoReserva from '../../components/EstadoReserva';
 import Icono from '../../components/Icono';
@@ -301,7 +301,7 @@ export default function AdminReportes() {
                       <tbody>
                         {r.ultimas.map((u) => (
                           <tr key={u.id}>
-                            <td data-etiqueta="Compra">{new Date(u.fechaCompra).toLocaleString('es-EC', { dateStyle: 'short', timeStyle: 'short' })}</td>
+                            <td data-etiqueta="Compra">{fechaHoraTexto(u.fechaCompra, 'corta')}</td>
                             <td data-etiqueta="Cliente" className="celda-principal">{u.cliente}</td>
                             <td data-etiqueta="Atracción">{u.atraccion}</td>
                             <td data-etiqueta="Visita">

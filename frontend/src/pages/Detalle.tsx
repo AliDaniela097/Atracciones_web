@@ -6,7 +6,7 @@ import { ciudadDe, coordenadasTexto, formatoDuracion, nombreIdioma, precioTexto,
 import MediaAtraccion from '../components/MediaAtraccion';
 import Icono from '../components/Icono';
 import { EstadoError, MensajeError } from '../components/Estados';
-import { dinero, fechaLarga, MAX_ENTRADAS_POR_LINEA, useCarrito } from '../carrito';
+import { dinero, fechaLarga, horaTexto, MAX_ENTRADAS_POR_LINEA, useCarrito } from '../carrito';
 import { useAuth } from '../auth';
 import { ANCHO, fotoUrl } from '../lib/imagen';
 
@@ -225,7 +225,11 @@ export default function Detalle() {
                     'Consultando cupos…'
                   ) : disp ? (
                     libres === 0 ? (
-                      yaEnCarrito > 0 ? 'Ya tienes en tu carrito todos los cupos de esta fecha.' : 'No quedan cupos para esta fecha. Prueba con otro día.'
+                      yaEnCarrito > 0
+                        ? 'Ya tienes en tu carrito todos los cupos de esta fecha.'
+                        : fecha === fechaMasDias(0)
+                          ? 'Para hoy ya no quedan horarios disponibles. Prueba con otro día.'
+                          : 'No quedan cupos para esta fecha. Prueba con otro día.'
                     ) : (
                       <>
                         <strong>{libres}</strong> cupos disponibles
@@ -242,7 +246,9 @@ export default function Detalle() {
                     Horario
                     <select value={hora} onChange={(e) => setHora(e.target.value)}>
                       {disp.times.map((t) => (
-                        <option key={t}>{t}</option>
+                        <option key={t} value={t}>
+                          {horaTexto(t)}
+                        </option>
                       ))}
                     </select>
                   </label>

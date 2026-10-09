@@ -125,6 +125,24 @@ export function fechaLarga(fecha: string) {
   return new Date(a, m - 1, d).toLocaleDateString('es-EC', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 }
 
+/** "13:00" -> "13:00 h" (formato de 24 horas, como los horarios de las atracciones) */
+export function horaTexto(hora: string) {
+  return `${hora} h`;
+}
+
+/** Fecha y hora de un instante en hora de Ecuador y formato de 24 horas: "9 de octubre de 2026, 18:51" */
+export function fechaHoraTexto(iso: string, estilo: 'larga' | 'corta' = 'larga') {
+  return new Date(iso).toLocaleString('es-EC', {
+    timeZone: 'America/Guayaquil',
+    day: estilo === 'larga' ? 'numeric' : '2-digit',
+    month: estilo === 'larga' ? 'long' : '2-digit',
+    year: estilo === 'larga' ? 'numeric' : '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  });
+}
+
 export function dinero(valor: number) {
   return valor === 0 ? 'Gratis' : `$${valor.toFixed(2)}`;
 }

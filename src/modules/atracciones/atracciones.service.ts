@@ -30,6 +30,11 @@ import { esOperador, type UsuarioToken } from '../auth/roles';
 const TILDES_ORIGEN = 'áéíóúüñÁÉÍÓÚÜÑ';
 const TILDES_DESTINO = 'aeiouunaeiouun';
 
+/** Ciudades de las islas Galápagos (ids del seed de ciudades GPS y SCY): su hora es UTC-6, una menos que el continente. */
+const CIUDADES_GALAPAGOS = [8, 9];
+/** Minutos antes del inicio en que se deja de vender un horario del día de hoy. */
+const MINUTOS_CIERRE_VENTA = 30;
+
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -242,10 +247,16 @@ export class AtraccionesService {
     this.validarFecha(date);
     const atraccion = await this.buscarAtraccion(id);
     const vendidas = await this.ticketsVendidos(this.dataSource.manager, id, date);
+    // Solo se ofrecen los horarios que todavía se pueden comprar (hora local de la atracción).
+    const ahora = this.ahoraLocal(await this.husoHorario(this.dataSource.manager, id));
+    const horarios = atraccion.horarios ?? [];
+    const vigentes = this.horariosVigentes(horarios, date, ahora);
+    // Si la atracción tiene horarios y ya cerraron todos (o la fecha pasó), no hay nada que vender.
+    const cerrado = date < ahora.fecha || (horarios.length > 0 && vigentes.length === 0);
     return {
       date,
-      available_spots: Math.max(atraccion.cupoDiario - vendidas, 0),
-      times: atraccion.horarios ?? [],
+      available_spots: cerrado ? 0 : Math.max(atraccion.cupoDiario - vendidas, 0),
+      times: vigentes,
     };
   }
 
@@ -278,6 +289,18 @@ export class AtraccionesService {
 
       if (dto.time && atraccion.horarios.length > 0 && !atraccion.horarios.includes(dto.time)) {
         throw new BadRequestException(`Horario no disponible. Horarios: ${atraccion.horarios.join(', ')}`);
+      }
+
+      // Hora local de la atracción (Galápagos tiene una hora menos que el continente)
+      const ahora = this.ahoraLocal(await this.husoHorario(m, id));
+      if (dto.date < ahora.fecha) throw new BadRequestException('La fecha de la reserva ya pasó');
+      if (dto.date === ahora.fecha && atraccion.horarios.length > 0 && !dto.time) {
+        throw new BadRequestException('Elige un horario para reservar hoy');
+      }
+      if (dto.time && this.horariosVigentes([dto.time], dto.date, ahora).length === 0) {
+        throw new BadRequestException(
+          `El horario ${dto.time} ya no está disponible. La venta se cierra ${MINUTOS_CIERRE_VENTA} minutos antes de cada horario.`,
+        );
       }
 
       const vendidas = await this.ticketsVendidos(m, id, dto.date);
@@ -402,6 +425,37 @@ export class AtraccionesService {
   private hoy() {
     // Fecha actual en Ecuador continental (UTC-5)
     return new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  }
+
+  /** Huso horario de la atracción en horas respecto a UTC: -6 si está en Galápagos, -5 en el resto del Ecuador. */
+  private async husoHorario(m: EntityManager, atraccionId: string): Promise<number> {
+    const enGalapagos = await m
+      .getRepository(UbicacionAtraccion)
+      .createQueryBuilder('u')
+      .where('u.atraccionId = :atraccionId', { atraccionId })
+      .andWhere('u.ciudadId IN (:...ciudades)', { ciudades: CIUDADES_GALAPAGOS })
+      .getCount();
+    return enGalapagos > 0 ? -6 : -5;
+  }
+
+  /** Fecha (YYYY-MM-DD) y minutos transcurridos del día en el huso indicado. */
+  private ahoraLocal(huso: number): { fecha: string; minutos: number } {
+    const d = new Date(Date.now() + huso * 60 * 60 * 1000);
+    return { fecha: d.toISOString().slice(0, 10), minutos: d.getUTCHours() * 60 + d.getUTCMinutes() };
+  }
+
+  /**
+   * Horarios que todavía se pueden comprar para una fecha: un día futuro conserva todos, un día pasado ninguno
+   * y hoy solo los que empiezan más de MINUTOS_CIERRE_VENTA minutos después de la hora actual.
+   */
+  private horariosVigentes(horarios: string[], fecha: string, ahora: { fecha: string; minutos: number }): string[] {
+    if (fecha > ahora.fecha) return horarios;
+    if (fecha < ahora.fecha) return [];
+    return horarios.filter((h) => {
+      const m = /^(\d{1,2}):(\d{2})$/.exec(h);
+      if (!m) return true; // un horario con formato raro no se puede comparar: lo valida el catálogo
+      return Number(m[1]) * 60 + Number(m[2]) - MINUTOS_CIERRE_VENTA > ahora.minutos;
+    });
   }
 
   private async validarCiudades(m: EntityManager, locations: LocationDto[]) {

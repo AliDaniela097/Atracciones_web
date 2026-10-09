@@ -2,7 +2,7 @@ openapi: 3.0.3
 
 info:
   title: API de Atracciones Turísticas - Contrato de la aplicación implementada
-  version: 2.2.0
+  version: 2.3.0
   description: |
     Contrato de la aplicación **Atracciones Web** tal como está implementada y desplegada.
 
@@ -12,6 +12,10 @@ info:
 
     Extensión a una operación del contrato: `POST /atracciones/search` acepta el campo opcional `query` (texto libre).
     Es compatible hacia atrás: quien no lo envía obtiene el mismo resultado que con el contrato del grupo.
+
+    Regla de horarios (aplicada por la aplicación): para la fecha de hoy solo se pueden comprar los horarios que empiezan
+    más de 30 minutos después de la hora actual. La hora es la local de la atracción (Ecuador continental UTC-5,
+    Galápagos UTC-6). Los horarios están en formato de 24 horas (`HH:MM`).
 
     **Autenticación.** La API emite su propio token JWT (Bearer). Se obtiene en `POST /auth/login`,
     `POST /auth/registro` o `POST /auth/google`. Los permisos (scopes) usan los mismos nombres del contrato del grupo.
@@ -274,7 +278,12 @@ paths:
     get:
       tags: [Atracciones - Catálogo]
       summary: Consultar la disponibilidad de cupos
-      description: Cupos disponibles = cupo diario de la atracción menos los tickets de reservas no canceladas en esa fecha.
+      description: |
+        Cupos disponibles = cupo diario de la atracción menos los tickets de reservas no canceladas en esa fecha.
+
+        `times` solo trae los horarios que todavía se pueden comprar: para hoy se quitan los que ya empezaron o empiezan
+        en menos de 30 minutos (hora local de la atracción). Si la atracción tiene horarios y ya cerraron todos, o la fecha
+        ya pasó, `available_spots` es 0.
       security: []
       parameters:
         - $ref: '#/components/parameters/AtraccionId'
@@ -303,8 +312,10 @@ paths:
       summary: Crear una reserva
       description: |
         Solo el rol CLIENTE puede reservar. Se ejecuta en una transacción con bloqueo de la atracción, por lo que dos compras
-        simultáneas no pueden vender el mismo último cupo. Valida que la fecha no haya pasado, que el horario exista y que
-        haya cupos. La reserva queda en estado CONFIRMED y el total se calcula en USD.
+        simultáneas no pueden vender el mismo último cupo. Valida que la fecha no haya pasado, que el horario exista, que
+        el horario de hoy no haya cerrado su venta (30 minutos antes de empezar, hora local de la atracción) y que haya cupos.
+        Si la atracción tiene horarios y la reserva es para hoy, `time` es obligatorio. La reserva queda en estado
+        CONFIRMED y el total se calcula en USD.
       security:
         - bearerAuth: [attractions:book]
       parameters:
@@ -1175,6 +1186,7 @@ components:
           items:
             type: string
           example: ['10:00', '14:00']
+          description: Horarios en formato de 24 horas que todavía se pueden comprar en la fecha consultada.
 
     ReservationRequest:
       type: object
@@ -1183,11 +1195,13 @@ components:
         date:
           type: string
           format: date
-          description: No puede ser una fecha pasada.
+          description: No puede ser una fecha pasada (se compara con la fecha local de la atracción).
         time:
           type: string
           example: '10:00'
-          description: Debe ser uno de los horarios de la atracción.
+          description: |
+            Debe ser uno de los horarios de la atracción, en formato de 24 horas (`HH:MM`). Para la fecha de hoy debe empezar
+            más de 30 minutos después de la hora local de la atracción.
         ticket_count:
           type: integer
           minimum: 1

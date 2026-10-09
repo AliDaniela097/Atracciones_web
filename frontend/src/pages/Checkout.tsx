@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import { useAuth } from '../auth';
-import { dinero, fechaLarga, useCarrito } from '../carrito';
+import { dinero, fechaLarga, horaTexto, useCarrito } from '../carrito';
 import Icono from '../components/Icono';
 import { MensajeError } from '../components/Estados';
 
@@ -273,7 +273,7 @@ export default function Checkout() {
                     <strong>{l.nombre}</strong>
                     <p className="nota">
                       {fechaLarga(l.fecha)}
-                      {l.hora ? `, ${l.hora}` : ''}. {l.cantidad} {l.cantidad === 1 ? 'entrada' : 'entradas'}
+                      {l.hora ? `, ${horaTexto(l.hora)}` : ''}. {l.cantidad} {l.cantidad === 1 ? 'entrada' : 'entradas'}
                     </p>
                   </div>
                   <span>{dinero(l.cantidad * l.precioUnitario)}</span>

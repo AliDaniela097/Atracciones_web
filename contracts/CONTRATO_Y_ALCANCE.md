@@ -65,6 +65,15 @@ ProblemDetails, Price, Coordinates, Location, Photo, Operator, Rating, Url, Deta
 
 En el frontend, la lupa de la barra superior usa este campo: sugiere atracciones mientras se escribe y el catálogo acepta `?q=texto`.
 
+### Reglas de horarios (comportamiento agregado)
+
+| Operación | Regla |
+|---|---|
+| `GET /atracciones/{id}/availability` | `times` solo trae los horarios que todavía se pueden comprar. Para hoy se quitan los que ya empezaron o empiezan en menos de 30 minutos. Si ya cerraron todos, `available_spots` es 0. |
+| `POST /atracciones/{id}/reservations` | Rechaza (400) un horario de hoy que ya cerró su venta y una fecha ya pasada. Si la atracción tiene horarios y la reserva es para hoy, `time` es obligatorio. |
+
+La hora que se compara es la local de la atracción: Ecuador continental UTC-5 y Galápagos UTC-6. Los horarios se muestran en formato de 24 horas (por ejemplo `13:00 h`).
+
 ### Comportamiento adicional
 
 - Autenticación con JWT propio y dos roles: CLIENTE (leer, reservar, cancelar) y OPERADOR (leer, cancelar, escribir).

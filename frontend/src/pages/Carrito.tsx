@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useCarrito, fechaLarga, dinero, MAX_ENTRADAS_POR_LINEA } from '../carrito';
+import { useCarrito, fechaLarga, dinero, horaTexto, MAX_ENTRADAS_POR_LINEA } from '../carrito';
 import { ciudadPorId } from '../ciudades';
 import Icono from '../components/Icono';
 import { EstadoVacio } from '../components/Estados';
@@ -46,7 +46,7 @@ export default function Carrito() {
                   </h2>
                   <p className="nota">
                     {ciudad?.nombre ?? 'Ecuador'}, {fechaLarga(l.fecha)}
-                    {l.hora ? `, ${l.hora}` : ''}
+                    {l.hora ? `, ${horaTexto(l.hora)}` : ''}
                   </p>
                   <p className="nota">{dinero(l.precioUnitario)} por persona</p>
                   {l.error && (

@@ -7,7 +7,7 @@ export class ReservationRequestDto {
   @IsString()
   date: string;
 
-  @ApiProperty({ description: 'Hora seleccionada', example: '10:00', required: false })
+  @ApiProperty({ description: 'Hora seleccionada en formato de 24 horas (HH:MM). Hoy debe empezar más de 30 minutos después de la hora actual', example: '10:00', required: false })
   @IsString()
   @IsOptional()
   time?: string;
