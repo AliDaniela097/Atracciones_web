@@ -8,6 +8,7 @@ import Icono from '../components/Icono';
 import { EstadoError, MensajeError } from '../components/Estados';
 import { dinero, fechaLarga, MAX_ENTRADAS_POR_LINEA, useCarrito } from '../carrito';
 import { useAuth } from '../auth';
+import { ANCHO, fotoUrl } from '../lib/imagen';
 
 export default function Detalle() {
   const { id = '' } = useParams();
@@ -137,12 +138,12 @@ export default function Detalle() {
 
       <div className={`mosaico mosaico--${Math.min(Math.max(a.photos.length, 1), 3)}`}>
         <div className="mosaico-principal">
-          <MediaAtraccion a={a} />
+          <MediaAtraccion a={a} ancho={ANCHO.grande} />
         </div>
         {a.photos.slice(1, 3).map((p, i) => (
           <img
             key={p.url}
-            src={p.url}
+            src={fotoUrl(p.url, ANCHO.tarjeta)}
             alt={`Foto ${i + 2} de ${a.name}`}
             loading="lazy"
             onError={(e) => e.currentTarget.classList.add('foto-fallida')}

@@ -5,6 +5,7 @@ import type { Atraccion } from '../types';
 import { CIUDADES, ciudadDe, coordenadasTexto } from '../ciudades';
 import AtraccionCard from '../components/AtraccionCard';
 import { TarjetasCargando } from '../components/Estados';
+import { ANCHO, fotoUrl } from '../lib/imagen';
 
 const SEGUNDOS_POR_FOTO = 8;
 
@@ -70,7 +71,14 @@ export default function Inicio() {
       >
         <div className="heroe-fotos" aria-hidden="true">
           {portadas.map((a, i) => (
-            <img key={a.id} src={a.photos[0].url} alt="" className={i === actual ? 'activa' : undefined} />
+            <img
+              key={a.id}
+              src={fotoUrl(a.photos[0].url, ANCHO.grande)}
+              alt=""
+              className={i === actual ? 'activa' : undefined}
+              loading={i === 0 ? 'eager' : 'lazy'}
+              decoding="async"
+            />
           ))}
         </div>
         <div className="heroe-velo" aria-hidden="true" />
@@ -127,7 +135,7 @@ export default function Inicio() {
             return (
               <li key={c.id}>
                 <Link to={`/explorar?ciudad=${c.id}`} className="destino" aria-label={`${c.nombre}, aeropuerto ${c.iata}: ver atracciones`}>
-                  {foto ? <img src={foto} alt="" loading="lazy" /> : <span className="destino-sin-foto" />}
+                  {foto ? <img src={fotoUrl(foto, ANCHO.tarjeta)} alt="" loading="lazy" /> : <span className="destino-sin-foto" />}
                   <span className="destino-texto">
                     <span className="destino-iata">{c.iata}</span>
                     <span className="destino-ciudad">{c.nombre}</span>

@@ -6,6 +6,7 @@ import { ciudadDe, precioTexto, TIPOS_PRODUCTO } from '../../ciudades';
 import Icono from '../../components/Icono';
 import { EstadoError, MensajeError } from '../../components/Estados';
 import ResumenOperador from '../../components/ResumenOperador';
+import { ANCHO, fotoUrl } from '../../lib/imagen';
 
 const POR_PAGINA = 10;
 
@@ -102,7 +103,7 @@ export default function AdminAtracciones() {
                     <tr key={a.id}>
                       <td data-etiqueta="Nombre" className="celda-principal">
                         <span className="celda-con-foto">
-                          {a.photos[0] ? <img src={a.photos[0].url} alt="" loading="lazy" /> : <span className="miniatura-vacia" aria-hidden="true" />}
+                          {a.photos[0] ? <img src={fotoUrl(a.photos[0].url, ANCHO.miniatura)} alt="" loading="lazy" /> : <span className="miniatura-vacia" aria-hidden="true" />}
                           {a.name}
                         </span>
                       </td>

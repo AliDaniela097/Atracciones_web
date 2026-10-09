@@ -3,6 +3,7 @@ import { useCarrito, fechaLarga, dinero, MAX_ENTRADAS_POR_LINEA } from '../carri
 import { ciudadPorId } from '../ciudades';
 import Icono from '../components/Icono';
 import { EstadoVacio } from '../components/Estados';
+import { ANCHO, fotoUrl } from '../lib/imagen';
 
 export default function Carrito() {
   const { lineas, total, cantidadTotal, cambiarCantidad, quitar } = useCarrito();
@@ -37,7 +38,7 @@ export default function Carrito() {
             return (
               <li key={l.id} className="linea">
                 <Link to={`/atraccion/${l.atraccionId}`} className="linea-media" aria-hidden="true" tabIndex={-1}>
-                  {l.foto ? <img src={l.foto} alt="" /> : <span className="codigo-iata">{ciudad?.iata ?? 'EC'}</span>}
+                  {l.foto ? <img src={fotoUrl(l.foto, ANCHO.miniatura)} alt="" /> : <span className="codigo-iata">{ciudad?.iata ?? 'EC'}</span>}
                 </Link>
                 <div className="linea-info">
                   <h2 className="linea-titulo">
