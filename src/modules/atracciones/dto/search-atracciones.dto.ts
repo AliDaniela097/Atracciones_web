@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsDateString, IsInt, IsNumber, IsOptional, IsString, Max, Min, ValidateNested } from 'class-validator';
+import { IsArray, IsDateString, IsInt, IsNumber, IsOptional, IsString, Max, MaxLength, Min, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class DatesFilterDto {
@@ -55,6 +55,19 @@ export class SearchAtraccionesDto {
   @IsString({ each: true })
   @IsOptional()
   countries?: string[];
+
+  @ApiProperty({
+    description:
+      'Texto libre (extensión del contrato). Busca en nombre, descripción, categorías y dirección, sin distinguir mayúsculas ni tildes. '
+      + 'Si trae varias palabras, todas deben aparecer.',
+    example: 'playa',
+    required: false,
+    maxLength: 100,
+  })
+  @IsString()
+  @MaxLength(100)
+  @IsOptional()
+  query?: string;
 
   @ApiProperty({ description: 'Rango de fechas', type: DatesFilterDto, required: false })
   @ValidateNested()

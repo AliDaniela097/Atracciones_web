@@ -73,7 +73,8 @@ export const api = {
     request<PaginatedAtracciones>(`/atracciones?limit=${limit}&offset=${offset}`),
 
   /** POST /atracciones/search  (sort.by: most_popular, top_rated, price_asc, price_desc) */
-  buscar: (cities: number[], orden = 'most_popular', next_page?: string) =>
+  // "consulta" es el texto libre (campo "query" del contrato extendido); "filas" permite pedir pocas para las sugerencias
+  buscar: (cities: number[], orden = 'most_popular', next_page?: string, consulta?: string, filas = 12) =>
     request<SearchResponse>('/atracciones/search', {
       method: 'POST',
       body: JSON.stringify({
@@ -81,8 +82,9 @@ export const api = {
         cities,
         countries: ['ec'],
         dates: { start_date: fechaMasDias(0), end_date: fechaMasDias(30) },
-        rows: 12,
+        rows: filas,
         sort: { by: orden },
+        ...(consulta?.trim() ? { query: consulta.trim() } : {}),
         ...(next_page ? { next_page } : {}),
       }),
     }),

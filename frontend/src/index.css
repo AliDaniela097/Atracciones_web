@@ -348,8 +348,19 @@ main:focus {
   border: 1px solid var(--linea);
   border-radius: var(--radio-m);
   box-shadow: var(--sombra);
-  max-height: 320px;
+  max-height: min(70vh, 440px);
   overflow-y: auto;
+}
+
+/* En celular el buscador es angosto: la lista ocupa todo el ancho de la pantalla, debajo de la barra superior */
+@media (max-width: 639px) {
+  .buscador-lista {
+    position: fixed;
+    top: 72px;
+    left: 12px;
+    right: 12px;
+    max-height: calc(100vh - 160px);
+  }
 }
 
 .buscador-lista li {

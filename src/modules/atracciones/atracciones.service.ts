@@ -26,6 +26,10 @@ import { LocationDto, PhotoDto } from './dto/nested-types.dto';
 import { toAtraccionResponse, toReservationResponse } from './atraccion.mapper';
 import { esOperador, type UsuarioToken } from '../auth/roles';
 
+/** Letras con tilde que se igualan a su versión simple al buscar (mayúsculas y minúsculas). */
+const TILDES_ORIGEN = 'áéíóúüñÁÉÍÓÚÜÑ';
+const TILDES_DESTINO = 'aeiouunaeiouun';
+
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -142,6 +146,22 @@ export class AtraccionesService {
     await this.atracciones.softDelete(id);
   }
 
+  /**
+   * Convierte el texto libre en palabras listas para LIKE: sin tildes, en minúsculas,
+   * con los comodines de LIKE (% _ \\) escapados, máximo 5 palabras de hasta 50 letras.
+   */
+  private palabrasDeBusqueda(query?: string): string[] {
+    if (!query) return [];
+    return query
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 5)
+      .map((p) => p.slice(0, 50).replace(/[\\%_]/g, (c) => `\\${c}`));
+  }
+
   /** POST /atracciones/search */
   async search(dto: SearchAtraccionesDto) {
     if (dto.dates && dto.dates.start_date > dto.dates.end_date) {
@@ -163,6 +183,18 @@ export class AtraccionesService {
         return 'a.id IN ' + sub.getQuery();
       })
       .setParameters({ cities: dto.cities ?? [], countries: (dto.countries ?? []).map((c) => c.toLowerCase()) });
+
+    // Texto libre: cada palabra debe aparecer en el nombre, la descripción, las categorías o la dirección.
+    this.palabrasDeBusqueda(dto.query).forEach((palabra, i) => {
+      const sinTildes = (expr: string) => `translate(lower(${expr}), '${TILDES_ORIGEN}', '${TILDES_DESTINO}')`;
+      const texto = sinTildes("a.nombre || ' ' || a.descripcion || ' ' || array_to_string(a.categorias, ' ')");
+      const direccion = sinTildes('ub.direccion');
+      filtro.andWhere(
+        `(${texto} LIKE :palabra${i} ESCAPE '\\' OR EXISTS ` +
+        `(SELECT 1 FROM ubicaciones_atraccion ub WHERE ub."atraccionId" = a.id AND ${direccion} LIKE :palabra${i} ESCAPE '\\'))`,
+        { [`palabra${i}`]: `%${palabra}%` },
+      );
+    });
 
     const rating = dto.filters?.rating;
     if (rating?.minimum_review_score !== undefined) {

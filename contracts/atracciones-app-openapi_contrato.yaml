@@ -2,13 +2,16 @@ openapi: 3.0.3
 
 info:
   title: API de Atracciones Turísticas - Contrato de la aplicación implementada
-  version: 2.1.0
+  version: 2.2.0
   description: |
     Contrato de la aplicación **Atracciones Web** tal como está implementada y desplegada.
 
     Incluye las 14 operaciones del contrato del grupo (`atracciones-openapi.yaml`, v1.2.0)
     más los endpoints propios de la aplicación: autenticación (`/auth/*`), reportes del operador (`/reportes/*`)
     y gestión de administradores (`/administradores`, solo para el administrador principal).
+
+    Extensión a una operación del contrato: `POST /atracciones/search` acepta el campo opcional `query` (texto libre).
+    Es compatible hacia atrás: quien no lo envía obtiene el mismo resultado que con el contrato del grupo.
 
     **Autenticación.** La API emite su propio token JWT (Bearer). Se obtiene en `POST /auth/login`,
     `POST /auth/registro` o `POST /auth/google`. Los permisos (scopes) usan los mismos nombres del contrato del grupo.
@@ -76,7 +79,12 @@ paths:
     post:
       tags: [Atracciones - Catálogo]
       summary: Búsqueda de atracciones
-      description: Búsqueda con filtros por ciudad, país, fechas, calificación, orden y paginación por token.
+      description: |
+        Búsqueda con filtros por ciudad, país, fechas, calificación, orden y paginación por token.
+
+        Extensión de la aplicación: el campo opcional `query` busca texto libre en el nombre, la descripción,
+        las categorías y la dirección. No distingue mayúsculas ni tildes (`galápagos` = `GALAPAGOS`).
+        Si trae varias palabras (máximo 5), todas deben aparecer. Se combina con el resto de los filtros.
       security: []
       requestBody:
         required: true
@@ -907,6 +915,14 @@ components:
           items:
             type: string
           example: [ec]
+        query:
+          type: string
+          maxLength: 100
+          example: playa
+          description: |
+            Extensión de la aplicación (no está en el contrato del grupo). Texto libre que se busca en nombre,
+            descripción, categorías y dirección, sin distinguir mayúsculas ni tildes. Con varias palabras,
+            todas deben aparecer. Un texto vacío o solo con espacios no filtra nada.
         dates:
           type: object
           required: [start_date, end_date]

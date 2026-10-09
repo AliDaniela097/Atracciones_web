@@ -57,6 +57,14 @@ ProblemDetails, Price, Coordinates, Location, Photo, Operator, Rating, Url, Deta
 | `POST /administradores` | Crear un administrador; el correo se arma solo: `nombre.apellido@atracciones.ec` (solo el principal) | `attractions:write` |
 | `DELETE /administradores/:id` | Eliminar un administrador; el principal no se puede eliminar (solo el principal) | `attractions:write` |
 
+### Extensión a una operación del contrato
+
+| Operación | Qué se agregó | Compatibilidad |
+|---|---|---|
+| `POST /atracciones/search` | Campo opcional `query` (texto libre, máximo 100 caracteres). Busca en nombre, descripción, categorías y dirección, sin distinguir mayúsculas ni tildes. Con varias palabras, todas deben aparecer. | Compatible hacia atrás: sin `query` responde igual que el contrato del grupo. |
+
+En el frontend, la lupa de la barra superior usa este campo: sugiere atracciones mientras se escribe y el catálogo acepta `?q=texto`.
+
 ### Comportamiento adicional
 
 - Autenticación con JWT propio y dos roles: CLIENTE (leer, reservar, cancelar) y OPERADOR (leer, cancelar, escribir).
@@ -67,6 +75,7 @@ ProblemDetails, Price, Coordinates, Location, Photo, Operator, Rating, Url, Deta
 - Validación de entradas (`whitelist`, `forbidNonWhitelisted`).
 - Validación de cupos con transacción y bloqueo de fila para evitar sobreventa.
 - Frontend completo en React: catálogo, detalle, carrito, checkout, mis reservas y panel de administración.
+- Buscador de la barra superior: aeropuertos (ciudad o código) y atracciones (texto libre).
 
 ---
 

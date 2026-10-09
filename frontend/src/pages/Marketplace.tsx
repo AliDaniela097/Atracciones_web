@@ -15,6 +15,8 @@ export default function Marketplace() {
   const ciudadId = Number(params.get('ciudad')) || undefined;
   const ciudad = ciudadPorId(ciudadId);
   const orden = ORDENES.some((o) => o.valor === params.get('orden')) ? params.get('orden')! : 'most_popular';
+  // Texto escrito en la lupa (?q=playa): se envía como "query" al POST /atracciones/search
+  const texto = (params.get('q') ?? '').trim().slice(0, 100);
 
   const [atracciones, setAtracciones] = useState<Atraccion[]>([]);
   const [total, setTotal] = useState(0);
@@ -25,13 +27,13 @@ export default function Marketplace() {
   const [seleccion, setSeleccion] = useState<Atraccion | null>(null);
   const [intento, setIntento] = useState(0);
 
-  // POST /atracciones/search cada vez que cambia la ciudad o el orden
+  // POST /atracciones/search cada vez que cambia la ciudad, el orden o el texto buscado
   useEffect(() => {
     let vigente = true; // evita mostrar una respuesta vieja si el usuario cambia rápido de ciudad
     setEstado('cargando');
     setError('');
     api
-      .buscar(ciudad ? [ciudad.id] : [], orden)
+      .buscar(ciudad ? [ciudad.id] : [], orden, undefined, texto)
       .then((r) => {
         if (!vigente) return;
         setAtracciones(r.data);
@@ -48,7 +50,7 @@ export default function Marketplace() {
     return () => {
       vigente = false;
     };
-  }, [ciudad, orden, intento]);
+  }, [ciudad, orden, texto, intento]);
 
   const cambiarParametro = (clave: string, valor?: string) => {
     const nuevos = new URLSearchParams(params);
@@ -62,7 +64,7 @@ export default function Marketplace() {
     if (!siguiente) return;
     setCargandoMas(true);
     try {
-      const r = await api.buscar(ciudad ? [ciudad.id] : [], orden, siguiente);
+      const r = await api.buscar(ciudad ? [ciudad.id] : [], orden, siguiente, texto);
       setAtracciones((prev) => [...prev, ...r.data]);
       setSiguiente(r.metadata.next_page);
     } catch (e) {
@@ -73,6 +75,7 @@ export default function Marketplace() {
   };
 
   const lugar = ciudad ? `${ciudad.nombre} (${ciudad.iata})` : 'todo Ecuador';
+  const busqueda = texto ? ` para “${texto}”` : '';
 
   return (
     <div className="explorar">
@@ -102,12 +105,25 @@ export default function Marketplace() {
           ))}
         </div>
 
+        {texto && (
+          <div className="chips" role="group" aria-label="Búsqueda activa">
+            <button
+              type="button"
+              className="chip"
+              aria-label={`Quitar la búsqueda “${texto}”`}
+              onClick={() => cambiarParametro('q')}
+            >
+              Búsqueda: “{texto}” ✕
+            </button>
+          </div>
+        )}
+
         <div className="barra-resultados">
           <p aria-live="polite">
             {estado === 'cargando'
               ? 'Buscando atracciones…'
               : estado === 'listo'
-                ? `${total} ${total === 1 ? 'atracción' : 'atracciones'} en ${lugar}`
+                ? `${total} ${total === 1 ? 'atracción' : 'atracciones'}${busqueda} en ${lugar}`
                 : ''}
           </p>
           <label className="campo-en-linea">
@@ -127,9 +143,20 @@ export default function Marketplace() {
         {estado === 'error' && <EstadoError mensaje={error} onReintentar={() => setIntento((n) => n + 1)} />}
 
         {estado === 'listo' && atracciones.length === 0 && (
-          <EstadoVacio titulo={`Todavía no hay atracciones en ${lugar}`}>
-            <p>Prueba con otro aeropuerto o mira todo el catálogo.</p>
-            {ciudad && (
+          <EstadoVacio
+            titulo={texto ? `No encontramos atracciones para “${texto}” en ${lugar}` : `Todavía no hay atracciones en ${lugar}`}
+          >
+            <p>
+              {texto
+                ? 'Revisa la ortografía o prueba con otra palabra, por ejemplo: playa, catedral o parque.'
+                : 'Prueba con otro aeropuerto o mira todo el catálogo.'}
+            </p>
+            {texto && (
+              <button type="button" className="btn btn--suave" onClick={() => cambiarParametro('q')}>
+                Quitar la búsqueda
+              </button>
+            )}
+            {!texto && ciudad && (
               <button type="button" className="btn btn--suave" onClick={() => cambiarParametro('ciudad')}>
                 Ver todo Ecuador
               </button>
