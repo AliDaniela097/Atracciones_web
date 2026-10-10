@@ -2,7 +2,7 @@ import {
   BadRequestException, ConflictException, Injectable, NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, EntityManager, In, Repository } from 'typeorm';
+import { DataSource, EntityManager, In, Repository, SelectQueryBuilder } from 'typeorm';
 import { randomUUID } from 'crypto';
 
 import { Atraccion } from './entities/atraccion.entity';
@@ -15,7 +15,7 @@ import { ClaveIdempotencia } from './entities/clave-idempotencia.entity';
 
 import { CreateAtraccionDto } from './dto/create-atraccion.dto';
 import { UpdateAtraccionDto } from './dto/update-atraccion.dto';
-import { ListAtraccionesQueryDto } from './dto/list-atracciones-query.dto';
+import { BuscarAtraccionesQueryDto } from './dto/list-atracciones-query.dto';
 import { SearchAtraccionesDto } from './dto/search-atracciones.dto';
 import { DetailsRequestDto } from './dto/details-request.dto';
 import { AvailabilityResponseDto } from './dto/availability.dto';
@@ -54,15 +54,26 @@ export class AtraccionesService {
   // =====================================================================
 
   /** GET /atracciones?limit=&offset= */
-  async findAll(query: ListAtraccionesQueryDto) {
+  async findAll(query: BuscarAtraccionesQueryDto) {
     const limit = query.limit ?? 10;
     const offset = query.offset ?? 0;
 
-    const [filas, total] = await this.atracciones.findAndCount({
-      order: { nombre: 'ASC' },
-      take: limit,
-      skip: offset,
-    });
+    // Sin texto se lista todo el catálogo; con texto (?q=) solo lo que coincide.
+    const filtro = this.aplicarBusquedaTexto(this.atracciones.createQueryBuilder('a'), query.q);
+    const total = await filtro.getCount();
+    const pagina = await filtro
+      .clone()
+      .select('a.id', 'id')
+      .orderBy('a.nombre', 'ASC')
+      .addOrderBy('a.id', 'ASC')
+      .offset(offset)
+      .limit(limit)
+      .getRawMany<{ id: string }>();
+
+    // Solo se cargan completas (fotos, ubicaciones, operador) las filas de la página
+    const cargadas = pagina.length ? await this.atracciones.find({ where: { id: In(pagina.map((p) => p.id)) } }) : [];
+    const porId = new Map(cargadas.map((f) => [f.id, f]));
+    const filas = pagina.map((p) => porId.get(p.id)).filter((f): f is Atraccion => !!f);
 
     return {
       data: filas.map(toAtraccionResponse),
@@ -152,6 +163,24 @@ export class AtraccionesService {
   }
 
   /**
+   * Filtra por texto libre: cada palabra debe aparecer en el nombre, la descripción, las categorías o la dirección,
+   * sin distinguir mayúsculas ni tildes. Sin texto no filtra nada. Se usa en GET /atracciones y en POST /atracciones/search.
+   */
+  private aplicarBusquedaTexto(qb: SelectQueryBuilder<Atraccion>, texto?: string): SelectQueryBuilder<Atraccion> {
+    this.palabrasDeBusqueda(texto).forEach((palabra, i) => {
+      const sinTildes = (expr: string) => `translate(lower(${expr}), '${TILDES_ORIGEN}', '${TILDES_DESTINO}')`;
+      const campos = sinTildes("a.nombre || ' ' || a.descripcion || ' ' || array_to_string(a.categorias, ' ')");
+      const direccion = sinTildes('ub.direccion');
+      qb.andWhere(
+        `(${campos} LIKE :palabra${i} ESCAPE '\\' OR EXISTS ` +
+        `(SELECT 1 FROM ubicaciones_atraccion ub WHERE ub."atraccionId" = a.id AND ${direccion} LIKE :palabra${i} ESCAPE '\\'))`,
+        { [`palabra${i}`]: `%${palabra}%` },
+      );
+    });
+    return qb;
+  }
+
+  /**
    * Convierte el texto libre en palabras listas para LIKE: sin tildes, en minúsculas,
    * con los comodines de LIKE (% _ \\) escapados, máximo 5 palabras de hasta 50 letras.
    */
@@ -189,17 +218,7 @@ export class AtraccionesService {
       })
       .setParameters({ cities: dto.cities ?? [], countries: (dto.countries ?? []).map((c) => c.toLowerCase()) });
 
-    // Texto libre: cada palabra debe aparecer en el nombre, la descripción, las categorías o la dirección.
-    this.palabrasDeBusqueda(dto.query).forEach((palabra, i) => {
-      const sinTildes = (expr: string) => `translate(lower(${expr}), '${TILDES_ORIGEN}', '${TILDES_DESTINO}')`;
-      const texto = sinTildes("a.nombre || ' ' || a.descripcion || ' ' || array_to_string(a.categorias, ' ')");
-      const direccion = sinTildes('ub.direccion');
-      filtro.andWhere(
-        `(${texto} LIKE :palabra${i} ESCAPE '\\' OR EXISTS ` +
-        `(SELECT 1 FROM ubicaciones_atraccion ub WHERE ub."atraccionId" = a.id AND ${direccion} LIKE :palabra${i} ESCAPE '\\'))`,
-        { [`palabra${i}`]: `%${palabra}%` },
-      );
-    });
+    this.aplicarBusquedaTexto(filtro, dto.query);
 
     const rating = dto.filters?.rating;
     if (rating?.minimum_review_score !== undefined) {

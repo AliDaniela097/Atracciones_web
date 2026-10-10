@@ -8,7 +8,7 @@ import { AtraccionesService } from './atracciones.service';
 import { CreateAtraccionDto } from './dto/create-atraccion.dto';
 import { UpdateAtraccionDto } from './dto/update-atraccion.dto';
 import { AtraccionResponseDto } from './dto/atraccion-response.dto';
-import { ListAtraccionesQueryDto } from './dto/list-atracciones-query.dto';
+import { BuscarAtraccionesQueryDto, ListAtraccionesQueryDto } from './dto/list-atracciones-query.dto';
 import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 import { SearchAtraccionesDto } from './dto/search-atracciones.dto';
 import { SearchAtraccionesResponseDto } from './dto/search-response.dto';
@@ -109,7 +109,7 @@ export class AtraccionesController {
   @Header('Cache-Control', 'max-age=300')
   @ApiOperation({ summary: 'Obtener el listado paginado de atracciones' })
   @ApiResponse({ status: 200, description: 'Listado recuperado exitosamente.', type: PaginatedResponseDto })
-  findAll(@Query() query: ListAtraccionesQueryDto) {
+  findAll(@Query() query: BuscarAtraccionesQueryDto) {
     return this.atraccionesService.findAll(query);
   }
 

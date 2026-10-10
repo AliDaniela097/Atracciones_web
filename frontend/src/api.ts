@@ -69,8 +69,11 @@ export const api = {
     request<TokenResponse>('/auth/google', { method: 'POST', body: JSON.stringify({ credential }) }),
 
   // ---------- Catálogo ----------
-  listar: (limit = 12, offset = 0) =>
-    request<PaginatedAtracciones>(`/atracciones?limit=${limit}&offset=${offset}`),
+  // "texto" filtra por nombre, descripción, categorías o dirección (parámetro "q" del contrato extendido)
+  listar: (limit = 12, offset = 0, texto?: string) =>
+    request<PaginatedAtracciones>(
+      `/atracciones?limit=${limit}&offset=${offset}${texto?.trim() ? `&q=${encodeURIComponent(texto.trim())}` : ''}`,
+    ),
 
   /** POST /atracciones/search  (sort.by: most_popular, top_rated, price_asc, price_desc) */
   // "consulta" es el texto libre (campo "query" del contrato extendido); "filas" permite pedir pocas para las sugerencias

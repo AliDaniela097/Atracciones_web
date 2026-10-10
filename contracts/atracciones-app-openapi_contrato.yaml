@@ -2,7 +2,7 @@ openapi: 3.0.3
 
 info:
   title: API de Atracciones Turísticas - Contrato de la aplicación implementada
-  version: 2.3.0
+  version: 2.4.0
   description: |
     Contrato de la aplicación **Atracciones Web** tal como está implementada y desplegada.
 
@@ -132,11 +132,24 @@ paths:
     get:
       tags: [Atracciones - Catálogo]
       summary: Listado paginado de atracciones
-      description: Ordenado por nombre ascendente. Paginación con `limit` y `offset`.
+      description: |
+        Ordenado por nombre ascendente. Paginación con `limit` y `offset`.
+        Extensión de la aplicación: el parámetro opcional `q` filtra por texto (lo usa el buscador del catálogo del panel del operador).
       security: []
       parameters:
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/Offset'
+        - name: q
+          in: query
+          required: false
+          description: |
+            Extensión de la aplicación (no está en el contrato del grupo). Texto libre que se busca en nombre,
+            descripción, categorías y dirección, sin distinguir mayúsculas ni tildes. Con varias palabras,
+            todas deben aparecer. Vacío o solo espacios no filtra nada.
+          schema:
+            type: string
+            maxLength: 100
+          example: frailes
       responses:
         '200':
           description: Listado recuperado

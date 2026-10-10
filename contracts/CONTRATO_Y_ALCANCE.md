@@ -62,8 +62,10 @@ ProblemDetails, Price, Coordinates, Location, Photo, Operator, Rating, Url, Deta
 | Operación | Qué se agregó | Compatibilidad |
 |---|---|---|
 | `POST /atracciones/search` | Campo opcional `query` (texto libre, máximo 100 caracteres). Busca en nombre, descripción, categorías y dirección, sin distinguir mayúsculas ni tildes. Con varias palabras, todas deben aparecer. | Compatible hacia atrás: sin `query` responde igual que el contrato del grupo. |
+| `GET /atracciones` | Parámetro opcional `q` (texto libre, máximo 100 caracteres) con la misma búsqueda de arriba. | Compatible hacia atrás: sin `q` responde igual que antes. |
 
 En el frontend, la lupa de la barra superior usa este campo: sugiere atracciones mientras se escribe y el catálogo acepta `?q=texto`.
+En el panel del operador, la página «Catálogo de atracciones» tiene un buscador que usa `GET /atracciones?q=` para encontrar una atracción y abrir su edición.
 
 ### Reglas de horarios (comportamiento agregado)
 
@@ -85,6 +87,7 @@ La hora que se compara es la local de la atracción: Ecuador continental UTC-5 y
 - Validación de cupos con transacción y bloqueo de fila para evitar sobreventa.
 - Frontend completo en React: catálogo, detalle, carrito, checkout, mis reservas y panel de administración.
 - Buscador de la barra superior: aeropuertos (ciudad o código) y atracciones (texto libre).
+- Buscador del catálogo en el panel del operador: nombre, categoría o dirección.
 
 ---
 

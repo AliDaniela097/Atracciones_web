@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../../api';
 import type { Atraccion } from '../../types';
@@ -18,21 +18,41 @@ export default function AdminAtracciones() {
   const [cargando, setCargando] = useState(true);
   const [errorCarga, setErrorCarga] = useState('');
   const [error, setError] = useState('');
+  // Lo que el operador escribe (se aplica tras una pausa para no consultar en cada letra)
+  const [escrito, setEscrito] = useState('');
+  const [busqueda, setBusqueda] = useState('');
 
-  // GET /atracciones?limit=&offset=
+  const aplicada = useRef('');
+  useEffect(() => {
+    const espera = setTimeout(() => {
+      const nueva = escrito.trim();
+      if (nueva === aplicada.current) return;
+      aplicada.current = nueva;
+      setBusqueda(nueva);
+      setPagina(1); // una búsqueda nueva siempre empieza en la primera página
+    }, 300);
+    return () => clearTimeout(espera);
+  }, [escrito]);
+
+  // GET /atracciones?limit=&offset=&q=
   const cargar = useCallback(() => {
+    let vigente = true; // evita mostrar una respuesta vieja si el operador sigue escribiendo
     setCargando(true);
     setErrorCarga('');
     api
-      .listar(POR_PAGINA, (pagina - 1) * POR_PAGINA)
+      .listar(POR_PAGINA, (pagina - 1) * POR_PAGINA, busqueda)
       .then((r) => {
+        if (!vigente) return;
         setFilas(r.data);
         setTotal(r.meta.totalItems);
         setTotalPaginas(Math.max(r.meta.totalPages, 1));
       })
-      .catch((e: Error) => setErrorCarga(e.message))
-      .finally(() => setCargando(false));
-  }, [pagina]);
+      .catch((e: Error) => vigente && setErrorCarga(e.message))
+      .finally(() => vigente && setCargando(false));
+    return () => {
+      vigente = false;
+    };
+  }, [pagina, busqueda]);
 
   useEffect(cargar, [cargar]);
 
@@ -48,12 +68,22 @@ export default function AdminAtracciones() {
     }
   };
 
+  const plural = (n: number) => (n === 1 ? 'atracción' : 'atracciones');
+
   return (
     <section aria-labelledby="titulo-catalogo">
       <header className="encabezado-pagina">
         <div>
           <h1 id="titulo-catalogo">Catálogo de atracciones</h1>
-          <p>{cargando ? 'Cargando…' : `${total} ${total === 1 ? 'atracción registrada' : 'atracciones registradas'}`}</p>
+          <p aria-live="polite">
+            {cargando
+              ? busqueda
+                ? 'Buscando…'
+                : 'Cargando…'
+              : busqueda
+                ? `${total} ${plural(total)} para “${busqueda}”`
+                : `${total} ${total === 1 ? 'atracción registrada' : 'atracciones registradas'}`}
+          </p>
         </div>
         <Link to="/admin/nueva" className="btn">
           <Icono nombre="mas" tamano={18} />
@@ -63,6 +93,27 @@ export default function AdminAtracciones() {
 
       <ResumenOperador />
 
+      <div className="buscador-admin" role="search">
+        <label htmlFor="buscar-catalogo" className="sr-only">
+          Buscar atracción por nombre, categoría o dirección
+        </label>
+        <Icono nombre="buscar" />
+        <input
+          id="buscar-catalogo"
+          type="search"
+          autoComplete="off"
+          maxLength={100}
+          placeholder="Busca una atracción por nombre, categoría o dirección…"
+          value={escrito}
+          onChange={(e) => setEscrito(e.target.value)}
+        />
+        {escrito && (
+          <button type="button" className="btn-texto" onClick={() => setEscrito('')} aria-label="Borrar la búsqueda">
+            Borrar
+          </button>
+        )}
+      </div>
+
       {error && <MensajeError>{error}</MensajeError>}
 
       {errorCarga ? (
@@ -70,7 +121,9 @@ export default function AdminAtracciones() {
       ) : (
         <div className="tabla-contenedor">
           <table className="tabla" aria-busy={cargando}>
-            <caption className="sr-only">Atracciones del catálogo, página {pagina} de {totalPaginas}</caption>
+            <caption className="sr-only">
+              Atracciones del catálogo{busqueda ? ` que coinciden con ${busqueda}` : ''}, página {pagina} de {totalPaginas}
+            </caption>
             <thead>
               <tr>
                 <th scope="col">Nombre</th>
@@ -92,7 +145,17 @@ export default function AdminAtracciones() {
               {!cargando && filas.length === 0 && (
                 <tr>
                   <td colSpan={5} className="sin-etiqueta">
-                    Todavía no hay atracciones. Crea la primera con “Nueva atracción”.
+                    {busqueda ? (
+                      <>
+                        Ninguna atracción coincide con “{busqueda}”. Revisa la ortografía o{' '}
+                        <button type="button" className="btn-texto" onClick={() => setEscrito('')}>
+                          borra la búsqueda
+                        </button>
+                        .
+                      </>
+                    ) : (
+                      'Todavía no hay atracciones. Crea la primera con “Nueva atracción”.'
+                    )}
                   </td>
                 </tr>
               )}

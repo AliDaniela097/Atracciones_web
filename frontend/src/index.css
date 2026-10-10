@@ -3144,3 +3144,38 @@ h3 {
 img.foto-fallida {
   visibility: hidden;
 }
+
+/* Buscador del catálogo en el panel del operador */
+.buscador-admin {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  min-height: 48px;
+  margin-bottom: 16px;
+  background: var(--superficie);
+  border: 1px solid var(--linea);
+  border-radius: 999px;
+  color: var(--suave);
+}
+
+.buscador-admin:focus-within {
+  border-color: var(--acento);
+}
+
+.buscador-admin input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  padding: 12px 0;
+  color: var(--texto);
+}
+
+.buscador-admin input::placeholder {
+  color: var(--suave);
+}
+
+.buscador-admin input:focus-visible {
+  outline: none;
+}
