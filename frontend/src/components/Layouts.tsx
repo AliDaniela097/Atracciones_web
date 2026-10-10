@@ -13,14 +13,14 @@ interface Seccion {
   externa?: boolean;
 }
 
-/** Logotipo: un sol dorado cruzado por la línea ecuatorial (Ecuador = latitud 0) */
+/** Logotipo: un sol cruzado por la línea ecuatorial (Ecuador = latitud 0) */
 function Marca({ destino, conNombre = false }: { destino: string; conNombre?: boolean }) {
   return (
     <NavLink to={destino} end className={conNombre ? 'marca marca--nombre' : 'marca'} aria-label="Atracciones Ecuador, inicio">
       <svg viewBox="0 0 32 32" width="32" height="32" aria-hidden="true">
-        <circle cx="16" cy="16" r="11" fill="none" stroke="var(--oro)" strokeWidth="1.6" />
-        <circle cx="16" cy="16" r="5.5" fill="var(--oro)" />
-        <path d="M1 16h30" stroke="var(--oro)" strokeWidth="1.6" />
+        <circle cx="16" cy="16" r="11" fill="none" stroke="currentColor" strokeWidth="2.2" />
+        <circle cx="16" cy="16" r="5.5" fill="currentColor" />
+        <path d="M1 16h30" stroke="currentColor" strokeWidth="2.2" />
       </svg>
       {conNombre && (
         <span className="marca-texto">
